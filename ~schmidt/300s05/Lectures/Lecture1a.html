@@ -1,0 +1,547 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+<h2>Software development in Java: classes, objects, and packages</h2>
+
+In the previous lecture, we learned that programs are designed with
+three components: model and view and controller.
+
+<p>
+The Java language is a bit confusing, because there are two
+notions for ``component'' --- <em>class</em> and <em>object</em>.
+Here is a simplistic explanation:
+
+<ol>
+<li>
+The program pieces we write are <em>classes</em>.
+Each class lives in a file on disk.
+<li>
+When we start a program, copies of the classes are created in
+the computer's primary storage.  The copy in storage is an
+<em>object</em>.   It is possible to copy a class into
+primary storage more than once, thus constructing multiple objects
+from the same class.  (Example: You write a <tt>class LibraryBook</tt>,
+and then you start a program that constructs 100 <tt>new LibraryBook(...)</tt>
+objects.)
+<li>
+When we start a program, say
+<pre>
+java LibraryManager
+</pre>
+this constructs
+a <tt>LibraryManager</tt> object from
+<tt>class LibraryManager</tt>.
+Within  <tt>LibraryManager</tt>, there might be statements of the form,
+<pre>
+ ...  new LibraryBook(...)  ...
+</pre>
+The <tt>new</tt> statement constructs in storage a <tt>LibraryBook</tt> object
+from <tt>class LibraryBook</tt>.
+In this way, multiple objects are constructed and live in primary storage.
+
+<li>
+Before a program starts, there already exist
+several prebuilt objects, such as
+<tt>System.in</tt> and <tt>System.out</tt>.   A program can use these,
+say, as the view component(s) of the application.
+<!--
+<li>
+When we start a program by
+<pre>
+java Fred 12 abc 3.5
+</pre>
+the extra information on the command line are <em>program arguments</em>,
+which can be used as input by the program's <tt>main</tt> method.
+Of course, input can be received by other means as well, e.g.,
+interactive input from the command window and input from a graphics
+window.
+<li>
+A class contains <em>fields</em> and <em>methods</em>;
+the fields are usually labelled <tt>private</tt> and the
+methods are usually labelled <tt>public</tt>.
+When one class ``refers'' to another, this means the class invokes
+the other's public methods.  We say that the class
+<em>sends messages</em> to the other.
+<p>
+When an object is constructed from a class, the object gets
+an exact copy of the fields and methods written inside the class.
+-->
+</ol>
+
+<p>
+To summarize: classes are the components that the programmer
+writes and saves on disk; objects are the components that live
+in primary storage when the program executes.  If we wish to be
+pedantic, we say that the component diagrams
+in the previous lecture are <em>object diagrams</em>.
+
+<h3>Software development in Java</h3>
+
+Recall the software
+development methodology stated at the end of the previous lecture:
+<ol> 
+<li>
+<em>Requirements:</em>
+The program's intended user tells us how she wishes to use the program.
+The user must tell us stories and draw pictures that explain the
+different ways the program might be used.  Each possible usage is
+called a <em>use-case</em>.
+
+<li>
+<em>Design:</em> The programmer studies the use-cases 
+and applies the knowledge to designing the component structure,
+data structure, and control structure of the solution.
+Once the program is designed, the programmer does a ``safety check,''
+explaining how each use-case executes with the design.
+
+<li>
+<em>Implementation and Testing:</em>  The program is written to match
+the design, and it is tested to verify that
+it behaves correctly.  The testing
+usually proceeds in two stages: <em>unit testing</em>, where each
+component is tested by itself as much as possible, and <em>integration
+testing</em>, where the entire assembled program is tested on the use-caes.
+</ol>
+
+
+Let's study a simple example.
+
+
+<h3>Case Study: Counting votes</h3>
+
+<p>
+You are the Diebold Company, and the state of Ohio has asked you
+to write the software for their electronic voting machines for the
+2004 US presidential election.  
+
+<h4>I. Requirements</h4>
+
+You  begin by asking the Ohio election
+officials to give you examples --- <em>use-cases</em> --- that describe
+how the software should behave.
+They might give three such use-cases:
+<ul>
+<li>
+``The voter sees an input dialog on the screen; if the voter
+votes for Kerry, she types <tt>Kerry</tt> and pushes the dialog's
+OK button.   The program remembers the vote.''
+<li>
+``If the votes wishes to vote for <tt>Bush</tt>, the voter
+types <tt>Bush</tt> instead.
+<li>
+``When all the voters are finished, the election official sees the
+input dialog, presses the Cancel button, and the program prints
+the vote totals on the display.''
+</ul>
+
+<p>
+The set of use-cases is almost always incomplete, and the program
+designer might propose more of them, e.g.,
+``What happens if the voter types <tt>kerry</tt> or <tt>kery</tt>
+instead of <tt>Kerry</tt>''?
+Rarely does a programmer begin with ``all'' the use-cases, but there
+should be enough of them to gain a good understanding of the problem.
+
+<h4>II. Design</h4>
+
+We now apply the design stages described in the previous lecture.
+
+<h4>Component structure</h4>
+
+The vote-counting program fits the usual model-view-controller
+structure:
+<pre>
+<img src="VoteExample/Figs/components2.jpg">
+</pre>
+
+The first and most important task is to decide the data structure
+that resides in the model.
+
+<h4> Data structure </h4>
+
+The program's job is to total votes, so a table (array) is needed,
+where each cell of the array holds the total for one candidate.
+Here is a picture:
+<pre>
+<img src="VoteExample/Figs/votetable.jpg">
+</pre>
+The programmer might ask: ``Are these all the candidates?''
+``Does Ohio allow write-in ballots?''   The answers to these
+questions affect the data structure.  For now, we work with the
+3-celled array.
+
+
+<h4>Control structure</h4>
+
+The controller holds the algorithm that controls vote counting.
+Simply stated, the algorithm goes
+<pre>
+1. read and total the votes
+2. print the totals
+</pre>
+We also know that Step 1 must be conducted one vote at a time,
+so the details for Step 1 go something like this:
+<pre>
+1a. read a vote (if there is one to read!  if not, quit Step 1)
+1b. if the vote is for Bush (or Kerry or Nader), add one to the appropriate count
+1c. repeat Steps 1a and 1b until no more votes to read
+</pre>
+The outline should list all the actions the program must do, even
+if we do not state the details precisely.
+Now we are ready to draw the algorithm as a flow chart, which is
+a graph that shows the details and ordering.
+Here is the flow chart for Steps 1a and 1b:
+<pre>
+<img src="VoteExample/Figs/flowchart0.jpg">
+</pre>
+Now, we finish the flow chart by including Steps 1c and 2.
+This adds a loop --- a backwards arc --- to the flowchart and
+gives us the following:
+<pre>
+<img src="VoteExample/Figs/flowchart.jpg">
+</pre>
+
+When we take a close look at the algorithm, we notice that the
+phrase, ``get input,'' which suggests that we should
+use a method in the view component to read the vote.
+Next, the phrase, ''add one to Bush's count,'' suggests we
+should make a method in the model component to add a vote for Bush
+(similarly for Kerry and for Nader).   Finally, the phrase,
+``print the totals'', suggests there should be a method that gets
+the totals (and a method in the output view to print them).
+
+<p>
+This suggests we modify the model with some extra methods:
+<pre>
+<img src="VoteExample/Figs/votetable3.jpg">
+</pre>
+
+<h4>Input-output structure</h4>
+
+Whenever possible, we should use pre-built components to handle
+input and output.  Since the votes will arrive from an input dialog,
+we can use the dialog object that is prebuilt into the Java libraries ---
+It is <tt>javax.swing.JOptionPane</tt>.
+The output can be printed into a command window, using the
+object,  <tt>System.out</tt>.
+
+<h4>Summary of design</h4>
+
+Here is the current picture of our design:
+<pre>
+<img src="VoteExample/Figs/design2.jpg">
+</pre>
+The red dashed arrows are added to remind us which steps in the controller's
+algorithm
+will invoke the methods in the model and the view.
+The purple solid arrows are traditional; they summarize the red dashed
+arrows by telling us which components
+depend on the other components to execute.  (Here, the controller
+cannot execute without its model and view, but the model can be
+extracted and used without the controller and view, say, in another
+application.)
+
+<p>
+Now it is time to write the codings of the methods and the coding
+of the algorithm.
+
+
+<h3>III. Implementation</h3>
+
+<p>
+It is best to code the model first, because any flaws in the program's
+data structures will render the program useless.
+Based on our design, here is a coding of the model:
+<pre>
+package Election2004;
+/** VoteTable remembers the votes for the 2004 US Presidential Election */
+public class VoteTable
+{
+  private int[] vote; // holds the votes for the candidates
+                      // vote[0] holds Bush's votes
+                      // vote[1] holds Kerry's votes
+                      // vote[2] holds Nader's votes
+
+  /** Constructor  VoteTable  initializes the table */
+  public VoteTable()
+  { vote = new int[3]; }  // all cells are automatically set to 0
+
+  /** voteForBush  adds one more vote to Bush's total */
+  public void voteForBush()
+  { vote[0] = vote[0] + 1; }
+
+  /** voteForKerry adds one more vote to Kerry's total */
+  public void voteForKerry()
+  { vote[1] = vote[1] + 1; }
+
+  /** voteForNader  adds one more vote to Nader's total */
+  public void voteForNader()
+  { vote[2] = vote[2] + 1; }
+
+  /** computeTotals reports the votes for the three candidates
+    * @return a string that lists the candidates and their votes. */
+  public String computeTotals()
+  { return   "Bush = " + vote[0] + "\n"
+           + "Kerry = " + vote[1] + "\n"
+           + "Nader= " + vote[2] + "\n" ; }
+}
+</pre>
+This component should be tested by itself (called <em>unit testing</em>)
+as thoroughly as possible.  You can use a Development Environment
+(e.g., BlueJ or Eclipse) to do this, or you can write a tester
+program, sometimes called a <em>test harness</em>, to do this.
+Here is a sample test harness:
+<pre>
+package Election2004;
+public class TestModel
+{ public static void main(String[] a)
+  { VoteTable t = new VoteTable();
+
+    System.out.println(t.computeTotals());  // all candidates should have 0s
+
+    t.voteForNader(); 
+    System.out.println(t.computeTotals());  // Nader should have 1
+
+    t.voteForKerry();
+    System.out.println(t.computeTotals());  // Nader and Kerry should have 1
+
+    // etc.
+  }
+}
+</pre>
+A test harness should test all the methods of the component, invoked
+in all
+possible orderings.
+
+<p>
+Next,
+here is the controller, named <tt>Start</tt>:
+<pre>
+package Election2004;
+import javax.swing.*;
+/** Start starts and controls the vote counting. */
+public class Start
+{ public static void main(String[] a)
+  {
+    VoteTable table = new VoteTable();   // construct model object
+
+    // tabulate the votes:
+    boolean processing = true;
+    while ( processing )
+          { String s = JOptionPane.showInputDialog(
+	                 "Please type the last name of your candidate:");
+            if ( s == null )  // did election official press Cancel ?
+                 { processing = false; }  // yes, time to quit
+            else { if ( s.equals("Bush") )
+	              { table.voteForBush(); }
+                   else if ( s.equals("Kerry") )
+		      { table.voteForKerry(); }
+                   else if ( s.equals("Nader") )
+		      { table.voteForNader(); }
+		   else { } // it's an invalid vote and is lost forever...
+                 }
+           }
+     // total the votes:
+     System.out.println( table.computeTotals() );
+     System.exit(0);  // terminate program (including graphics components)
+  }
+}
+</pre>
+It is a bit difficult to do unit testing on a controller,
+since it controls the other parts of the program, but it <em>is</em>
+possible to write a dummy version of <tt>VoteTable</tt> for testing
+the controller.
+The dummy version, called a <em>stub</em> (sorry --- it's a bad name),
+might look like this:
+<pre>
+package Election2004;
+/** This is a dummy VoteTable, for testing purposes only. */
+public class VoteTable
+{ public VoteTable() { }
+
+  public void voteForBush() { System.out.println("B"); }
+  public void voteForKerry() { System.out.println("K"); }
+  public void voteForNader() { System.out.println("N"); }
+
+  public String computeTotals()
+  { return "request to compute totals" }
+}
+</pre>
+There is no intelligence in the dummy version; it is built to let
+us see the order in which the controller uses the methods in the model.
+
+<p>
+Finally, note that we have used the prebuilt objects,
+<tt>javax.swing.JOptionPane</tt> (for dialog input)
+and <tt>System.out</tt> (for output to the command window),
+so there is no additional programming needed for the view components.
+
+<p>
+Now, the application is ready for systems testing and ultimately,
+to let the voters of Ohio decide the 2004 US presidential election.
+
+
+<h3>Java Packages</h3>
+
+<p>
+Perhaps you notice that the two components in the case study were
+prefixed by the line,
+<pre>
+package Election2004;
+</pre>
+This tells the Java compiler that the
+two classes ``belong together'', and indeed, they <em>must</em>
+be placed in the
+same disk folder (directory), named <tt>Election2004</tt>.
+Such a folder is called a Java
+<em>package</em>.
+
+<p>
+Java makes it easy to create and execute a package.
+
+<p>
+<em>(Note: If you use the BlueJ IDE, you should read the CIS300 web pages,
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/bluej.packages.html">
+Constructing packages within BlueJ</a> 
+and
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/bluej.command.args.html">
+How to use BlueJ to start a main method</a>
+to learn how BlueJ lets you
+build and execute packages. The notes there might be a bit out of
+date, but if you are having problems making packages with BlueJ,
+the notes might be useful.)</em>
+
+
+<p>
+The following instructions work with the Java Development Kit
+and a command window:
+Say that we want to group
+the above two classes into a package named <tt>Election2004</tt>:
+<ol>
+<li>
+We create a new folder, named <tt>Election2004</tt>.
+<li>
+We insert <tt>class Start</tt> and
+<tt>class VoteTable</tt> into the folder.
+<li>
+<em>As the first line of both of the two classes, we insert:</em>
+<pre>
+package Election2004;
+</pre>
+</ol>
+We must recompile the classes:
+<ol>
+<li>
+Close (exit) folder <tt>Election2004</tt>.
+<li>
+Compile each class, e.g.,
+<pre>
+javac Election2004\VoteTable.java
+</pre>
+(or, if that doesn't work, use)
+<pre>
+javac -classpath . Election2004\VoteTable.java
+</pre>
+(The <tt>-classpath .</tt> tells
+the Java compiler that the other classes in the package are found where
+<tt>VoteTable.java</tt> lives. )
+Note the folder name prefixed to the class name.
+</ol>
+We execute the start-up class of the package in a similar way:
+<pre>
+java Election2004.Start
+</pre>
+Note that the folder name is prefixed with a dot to the start-up
+class name.
+
+<p>
+We can generate an interlinked collection of web pages for the
+package with just one <tt>javadoc</tt> command:
+<pre>
+javadoc Election2004
+</pre>
+
+<p>
+You can see the <tt>Election2004</tt> package
+at
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/VoteExample">
+<tt>http://www.cis.ksu.edu/~schmidt/300s05/Lectures/VoteExample</tt>
+</a>.
+
+<p>
+As an exercise, you should copy the two classes to your computer,
+make a package, compile it, execute it, and use <tt>javadoc</tt>
+to generate its API specification.
+
+<p>
+There are several advantages to grouping programs into packages:
+<ol>
+<li>
+Program components that work together are grouped together --- we won't
+lose or forget a component.
+<li>
+Packages can be saved in ``libaries'' and reused.  Indeed, all
+the graphics we do with Java programs reuses packages others wrote for us.
+<li>
+The <tt>javadoc</tt> program can be used to generate a family
+of cross-indexed web pages that document all the components in a
+package.  The use of <tt>javadoc</tt> makes it possible to
+quickly document and redocument systems during design and development.
+</ol>
+
+All three items listed above are important.  We have already exploited
+Item 2 each time we wrote a program using a graphical user interface ---
+when we added
+<pre>
+import javax.swing.*;
+</pre>
+at the beginning of the classes we wrote, we were connecting to and
+using a package, namely <tt>javax.swing</tt>, that someone else
+wrote.
+
+<p>
+Indeed, the general pattern for using an already written package, <tt>P</tt>,
+in an application is to
+<ul>
+<li>
+Ensure that the package (folder) <tt>P</tt> is on our computer.
+<li>
+Append to the top of each new component that uses the package,
+the statement,
+<pre>
+import P.*;
+</pre>
+</ul>
+This makes the components in the package available for use.
+
+
+
+<!--
+<h3>Java interfaces</h3>
+When something is built from pieces, the pieces are usually designed
+to connect together in some standard way.  Consider an automobile:
+Every time a new car is designed, it is designed with parts like
+engine, axles, and wheels, and the parts connect together in a standard way.
+Computer programs that interact with a user at a keyboard
+are designed in a standard way, called
+a <em>Model-View-Controller architecture</em> (MVC architecture):
+<ul>
+<li>
+The model part ``models'' the problem to be solved.  For example,
+if the program keeps a database of a library's books, then
+the model part models the book objects and a ``shelf'' object that
+holds the book objects.
+<li>
+The view part presents a ``view'' of the model on the display that
+the user can see and can interact with.  The view gives the user
+buttons and text fields to help the user supply input and read
+output.
+<li>
+The controller part ``controls'' the computation that is demanded
+by the user's input.
+</ul>
+-->
+
+</body>

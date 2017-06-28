@@ -1,0 +1,278 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+
+<h1>Fundamentals of Program Design</h1>
+
+<p>
+Every computer program is built from <em>components</em>, <em>data</em>,
+and <em>control</em>. 
+
+<p>
+For a 
+<em>single-user application</em> (used by one person at a time),
+which normally
+<em>reads</em> data, <em>saves</em> it in a <em>data structure</em>,
+<em>computes</em> on the data, and <em>writes</em> the results,
+there is a standard way of organizing the component structure,
+data structure, and control structure:
+
+<ol>
+<li>
+First,
+design the program's <em>component structure</em>
+with three components, organized in a
+<em>model-view-controller</em> pattern.
+<li>
+Next, decide what form of <em>data structure</em> (array,
+table, set, list, tree, etc.) will hold the program's data.
+The data structure will be inserted in the program's <em>model</em>
+component.
+<li>
+Then, write the algorithm that defines the execution steps --- the
+<em>control structure</em>.
+The algorithm will be placed inside the program's
+<em>controller</em>. 
+<li>
+Determine the form of input and output (disk file, typed text
+in a command window, dialogs, a graphical-use interface, etc.)
+that the program uses.  This will be embedded in the program's
+<em>view</em>.
+</ol>
+
+Once the four-step design is finished, then it is time to convert
+the design into (Java) coding.
+
+<p>
+We now consider each stage of the design process.
+
+
+<h3>Component structure</h3>
+
+Again,
+the program's job is to
+<em>read</em> information into the computer and <em>save</em> it in a
+format which lets the computer <em>compute</em> answers from the data
+that can be <em>written</em>.
+
+<p>
+The program can be written as one large piece of code,
+but this forces a programmer to think about all parts of the program
+at once.   Years of experience has shown that it is better to design
+a program in three parts, in a <em>model-view-controller</em> pattern:
+
+<pre>
+<img src="VoteExample/Figs/components.jpg">
+</pre>
+
+The data flows into the program through the <em>view</em> component
+and is directed by the controller into
+the <em>model</em>.  The <em>controller</em> component
+manipulates the data and tells the <em>view</em> to output the answer.
+A bit more precisely, we have that
+<ul>
+<li>
+The controller component holds the algorithm, that is the instructions that
+tell the computer when 
+to read data, compute on it, and write the answers.
+<li>
+The model component holds the structures that save the data so
+that it can be easily computed upon.   For example, if the program
+is a spreadsheet program, then the model holds a table (grid)
+that represents (``models'') the spreadsheet.  Or, if the program
+is the file manager for Linux, then the model is a tree structure
+that represents the folder-and-file structure of the disk-file system.
+<li>
+The view component holds the operations that connect the program
+to the input and output devices (the disk or display or printer....).
+</ul>
+
+All three components are important, but the key to building a good
+quality program is selecting the appropriate data structure for
+the model component.  
+
+
+<h3>Data structure</h3>
+
+<p>
+When you solve a problem with a computer program, always ask first,
+<center>
+<em><strong>
+How should the program store the information upon which it computes?
+</strong></em>
+</center>
+
+<p>
+Sometimes people talk about ``modelling'' the problem within the
+computer; the way the data is held is called the <em>model</em>.
+Recall the previous examples:
+<ul>
+<li>
+If
+the program is a spreadsheet program, then the information should
+be held in a data structure that is a grid.
+<li>
+If the program is a bank-account database, then the information should
+be grouped into customer accounts, each with a unique ID,
+saved in an array or set.
+<li>
+If the program is a file-system manager, then the information are files
+and folders that are organized in a tree-like structure.
+</ul>
+Each of these problems required a distinct <em>data structure</em>
+in the solution.
+
+
+<p>
+It helps to draw a picture of the structure.
+For example, if you are writing a vote-counting program for the 2004
+US presidential election, you might draw this picture of the model:
+<pre>
+<img src="VoteExample/Figs/votetable.jpg">
+</pre>
+On the other hand, if you are writing the file-system manager for
+Linux, then your program must hold folders and files,
+and the picture of the model might look like this:
+<pre>
+<img src="OSNotes/tree.jpg">
+</pre>
+The picture should suggest to you the kind of computer variables and
+data structures you will require to build the solution.
+<em>The purpose of a data-structures course like
+CIS300 is to train you at using a variety of such structures.</em>
+
+<p>
+The model component is ``passive'' --- another program component,
+the <em>controller</em>, inserts data into the structure, asks
+for computations, and extracts the answers.
+
+
+<h3>Control structure</h3>
+
+Every program follows a series of steps to solve a problem.
+The series of steps is called an <em>algorithm</em>; it
+<em>controls</em> the computer's work.
+
+<p>
+It is best to begin with an ``outline'' of the algorithm.
+The outline can be written in a graphical form, called a 
+<em>flowchart</em>.   
+
+<p>
+For example, here is an outline, written as a flowchart, of an
+algorithm for reading and totalling the votes of the presidential
+election:
+<pre>
+<img src="VoteExample/Figs/flowchart.jpg">
+</pre>
+Many people like to develop their algorithms with a flowchart,
+because the various paths can be developed one at a time,
+and the arrows make it less likely to forget a case in the development.
+
+<p>
+The algorithm is inserted into the <em>controller</em> component, and when
+writing the program in Java, you can code the algorithm into the
+<tt>main</tt> method.
+
+
+<h4>Methods for the components</h4>
+
+Often we see phrases in the algorithm
+that are not at the level of Java instructions.
+(Examples:  ``add one to Kerry's count'';
+``print the totals in the model.'')
+These phrases are clues that you should write procedures (methods)
+that do the work described by the phrases.  For example,
+since the phrase, ``add one to Kerry's count''
+implicitly mentions the data structure in the model, we might revise our
+our description of the model component to have a method that does what
+the phrase suggests:
+<pre>
+<img src="VoteExample/Figs/votetable2.jpg">
+</pre>
+
+This makes the algorithm in the controller easier to write, because
+it merely invokes the model's method, meaning that the controller
+does not have to deal with the details of the data structure.
+(This arrangement is also important if we must change the data structure
+within the model: the codings of the methods in the model are changed, and
+we do not rewrite the controller.)
+
+<p>
+Later, we write the code 
+for the methods.  If the coding
+is complicated, we might wish to write flow charts, possibly
+defining even more methods.
+
+<!--
+<p>
+Where to place the methods?
+The key is to look at the words in the phrases to see which components
+it mentions.  in the case of the print one, we might stick the method
+in the view component just as well as in the model,
+so it is not always clear cut.
+-->
+
+
+<h3>Input and output</h3>
+
+A program that reads and writes data will normally use a prebuilt
+component.  For example, when a program prints output to the command
+window, it uses the <tt>System.out</tt> component and its
+methods, <tt>print</tt> and <tt>println</tt>.  
+For input, if we use the <tt>JOptionPane</tt> object from
+<tt>javax.swing</tt> to generate an input dialog, then the
+application we design would look like this:
+<pre>
+<img src="VoteExample/Figs/design.jpg">
+</pre>
+
+Finally, in some cases, the programmer will build a customized
+input-output component that uses frames, text fields, buttons,
+etc.   This makes the View component more complex still.
+
+In the next lectures, we design and build
+applications using this design
+process.
+
+
+<h3>Software Development Methodology</h3>
+
+The design stage is only one stage in the stages one undertakes to
+build and deliver a software application.
+A standard development methodology goes in three stages:
+<ol> 
+<li>
+<em>Requirements:</em>
+The program's intended user tells us how she wishes to use the program.
+The user must tell us stories and draw pictures that explain the
+different ways the program might be used.  Each possible usage is
+called a <em>use-case</em>.  (Use-cases are presented in the next lecture.)
+
+<li>
+<em>Design:</em> The programmer studies the use-cases
+and applies the knowledge to designing the component structure,
+data structure, and control structure of the solution, as described
+above.
+Once the program is designed, the programmer does a ``safety check,''
+explaining how each use-case executes with the design.
+
+<li>
+<em>Implementation and Testing:</em>  The program is written to match
+the design, and it is tested to verify that
+it behaves correctly.  The testing
+usually proceeds in two stages: <em>unit testing</em>, where each
+component is tested by itself as much as possible, and <em>integration
+testing</em>, where the entire assembled program is tested on the use-caes.
+</ol>
+At this point, the program is given to the user, who will almost
+certainly respond with more requirements that cause the above
+three-step process to repeat.
+
+<p>
+We apply the software development methodology in the next lecture.
+
+</body>

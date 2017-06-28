@@ -1,0 +1,950 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+<h1>Introduction to Computer Architecture</h1>
+
+A general-purpose computer has these parts:
+<ol>
+<li>
+<em>processor</em>: the ``brain'' that does arithmetic, responds to incoming
+information, and generates outgoing information
+<li>
+<em>primary storage (memory or RAM)</em>: the ``scratchpad'' that remembers information
+that can be used by the processor.  It is connected to the processor
+by a <em>system bus</em> (wiring).
+<li>
+<em>system and expansion busses</em>: the transfer mechanisms (wiring plus connectors)
+that connect the processor to primary storage and input/output devices.
+</ol>
+A computer usually comes with several input/output devices:
+For input:
+a keyboard, a mouse;
+For output, a display (monitor), a printer;
+For both input and output: an internal disk drive,
+memory key, CD reader/writer, etc.,
+as well as connections to external networks.
+
+<p>
+For reasons of speed, primary
+storage is connected ``more closely'' to the processor than are
+the input/output devices.
+Most of the devices (e.g., internal disk,
+printer) are themselves primitive
+computers in the sense that they
+contain simple processors that help transfer information to/from
+the processor to/from the device.
+
+<p>
+Here is a simple picture that summarizes the above:
+<pre>
+<img src="computer.jpg">
+</pre>
+
+
+<h4>Information and binary coding</h4>
+
+For humans, information can be pictures, symbols, words, sounds, movements,
+and more.  A typical computer has a keyboard and mouse so that words and
+movements can be sent to the processor as information.   The information
+must be converted into electrical off-on (``0 and 1'')
+pulses that travel on the bus
+and arrive to the processor, which
+can save them in primary storage.
+
+<p>
+It is premature to study precisely how numbers and symbols can be
+represented as off-on (0-1) pulses, but here is review of base-2 (<em>binary</em>)
+coding of numbers, which is the concept upon which computer information
+is based:
+
+<pre>
+number   binary coding
+ 0        0000
+ 1        0001
+ 2        0010
+ 3        0011
+ 4        0100
+ 5        0101
+ 6        0110
+ 7        0111
+ 8        1000
+    ...
+14        1110
+15        1111
+</pre>
+and so on.  It is possible to do arithmetic in base two, e.g.
+3+5 is written:
+<pre>
+ 0011
++0101
+-----
+ 1000
+</pre>
+The addition works like normal (base-10) arithmetic, where
+1 + 1 = 10 (0 with a carry of 1).   Subtraction, multiplication, etc.,
+work this way, too, and it is possible to wire an electrical circuit
+that mechancially does the addition of the 0s and 1s.
+Indeed, a processor uses such a wiring, which operates on
+binary numbers held in
+<em>registers</em>, where a register is
+a sequence of <em>bits</em> (electronic ``flip-flops'' each of which
+can remember a 0 or 1).
+Here is a picture of an 8-bit
+register that holds the number 9:
+<pre>
++--+--+--+--+--+--+--+--+
+| 0| 0| 0| 0| 1| 0| 0| 1|
++--+--+--+--+--+--+--+--+
+</pre>
+
+<p>
+A processor has multiple such registers, and it can compute 3+5
+by placing 3 (0000 0011) and
+5 (0000 0101) into two registers and then using the wiring between
+the registers to compute the sum, which might be saved in a third
+register.
+A typical, modern register has 32 bits, called a <em>fullword</em>.
+Such a register can store a value in the approximate range of
+-2 billion to +2 billion.
+
+<p>
+When an answer, like 3+5 = 8, is computed, the processor might
+copy the answer to primary storage to save it for later use.  
+Later, the processor can copy the number from storage
+back into a register and do more arithmetic with it.
+
+<h4>Central processing unit</h4>
+
+The processor is truly <em>the</em> computer --- it is wired
+to compute arithmetic and related operations on numbers that it
+can hold in its data registers. 
+A processor is also called a <em>Central Processing Unit (CPU)</em>.
+
+<p>
+Here is a
+simplistic picture of the parts of a processor:
+
+<pre>
+<img src="processor.jpg">
+</pre>
+
+<ul>
+<li>
+The data registers hold numbers for computation, as noted earlier.
+<li>
+There is a simple <em>clock</em> --- a pulse generator ---
+that helps the Control Unit do instructions in proper time steps.
+<li>
+The <em>arithmetic-logic unit (ALU)</em> holds the wiring for doing arithmetic
+on the numbers held in the <em>data registers</em>. 
+(Review the addition example above.)
+<li>
+The <em>control unit</em> holds wiring that triggers the arithmetic
+operations in the ALU.   How does the control unit know to request an
+addition or a subtraction?   The answer is: it obtains instructions,
+one at a time, that have been stored in primary storage.
+
+<li>
+The <em>instruction counter</em> is a register that tells the
+control unit where to find the instruction that it must do.
+(The details will be explained shortly.)
+
+<li>
+The <em>instruction
+register</em> is where the instruction can be copied and held
+for study by the control unit,
+
+<li>
+The <em>address buffer</em> and <em>data buffer</em> are two registers that
+are a ``drop-off'' point when the
+processor wishes to copy information from a register to primary storage
+(or read information from primary storage to a register).  We study
+them later.
+
+<!--
+<small>
+<p>
+What is a buffer?  a waiting place where data can be dropped off by the
+processor for retrieval by primary storage or a
+slower I/O device (this way, the CPU need not
+wait for the device to do its work).
+</small>
+-->
+
+<li>
+The <em>interrupt register</em> is studied much later.
+</ul>
+
+A processor's speed
+is measured in Hertz (a kind of vibration speed) and is
+literally the speed of the computer's internal clock;
+the larger the Hertz number, the faster the processor.
+
+
+<h4>Primary storage</h4>
+
+Primary storage (also called <em>random-access memory --- RAM</em>)
+is literally a long sequence of fullwords, also called
+<em>cells</em>, where numbers can
+be saved for later use by the processor. 
+(Recall that a fullword
+is 32 bits).  Here is a simplistic picture:
+<pre>
+<img src="memory.jpg">
+</pre>
+The picture shows that each fullword (cell) is numbered by a unique <em>address</em>
+(analogous to street addresses for houses), so that information transferred
+from the processor can be saved at a specific cell's address and can be later
+retrieved by referring to that same address.
+
+<p>
+The picture shows an additional component, the <em>memory controller</em>,
+which is itself a primitive processor that can quickly find addresses
+and copy information stored in the addresses to/from the system bus.
+This works faster than if the processor did
+the work of reaching into storage to extract information.
+
+<p>
+When a number is copied from the processor into storage, we say it is
+<em>written</em>; when it is copied from storage into the processor,
+we say it is <em>read</em>.
+
+<p>
+As the diagram suggests, the <em>address lines</em> in the system bus
+are wires that transfer the bits that form the address of the cell
+in storage that must be read or written (the address is transmitted from
+the processor's address buffer --- see the previous section);
+the <em>data lines</em>
+are wires that transfer the information between the processor's
+data buffer and the cell in storage;
+and the control lines transmit whether the
+operation is a read or write to primary storage.
+
+<p>
+The tradition is to measure size of storage in <em>bytes</em>,
+where 8 bits equal one
+byte, and 4 bytes equal one fullword.  The larger the number, the larger the
+storage.
+
+<!--
+<p>
+In reality, primary storage is arranged as a grid, like this:
+<pre>
+       +--+--+--+--+--+--+--+--+
+    0  | 0| 0| 0| 0| 1| 0| 0| 0| 
+       +--+--+--+--+--+--+--+--+
+    1  | 0| 0| 0| 0| 1| 0| 0| 0| 
+       +--+--+--+--+--+--+--+--+
+    2  | 0| 0| 0| 0| 1| 0| 0| 0|
+       +--+--+--+--+--+--+--+--+
+  ...  |                       |
+       +--+--+--+--+--+--+--+--+
+128M-1 | 0| 0| 0| 0| 1| 0| 0| 0|
+       +--+--+--+--+--+--+--+--+
+</pre>
+Indeed, the original versions of storage were actually like window-screen
+wiring, with little magnetic rings hanging where the wires crossed,
+the rings magnetized to ``0'' and ''1''.   Modern storage uses
+transistor technology that holds electrical charge.
+-->
+
+<h4>Stored programs</h4>
+
+<p>
+In the 1950's, John von Neumann realized that primary storage could hold
+not only numbers, but patterns of bits that represented
+<em>instructions</em> that could tell the processor (actually, tell
+the processor's control unit) what to do.
+A sequence of instructions was
+called a <em>program</em>, and this was the beginning of <em>stored-program,
+general purpose
+computers</em>, where each time a computer was started, it could
+receive a new program in storage, which told the processor what
+computations to do.
+
+<p>
+Here is a simplistic example of a stored program that tells the
+processor to compute the sum of three numbers held in primary storage
+at addresses, 64, 65, and 66 and place the result into the cell
+at address 67:
+<pre>
+LOAD (read) the number at storage address 64 into data register 1
+LOAD the number at storage address 65 into data register 2
+ADD register 1 to register 2 and leave the sum in register 2
+LOAD the number at address 66 to register 1
+ADD register 1 to register 2 and leave the sum in register 2
+STORE (write) the value in register 2 to storage address 67
+</pre>
+instructions like  LOAD, ADD, and STORE  can be represented as bit patterns
+that are copied into the processor's instruction register.
+
+<p>
+Here is a simple coding of the six-instruction program, which
+is situated at addresses 1-6 of primary storage
+(and the numbers are at 64-66).
+The instructions are coded in bit patterns, and we assume
+that LOAD is  1001,  ADD is  1010, and STORE is 1011.
+Registers 1 and 2 are  0001  and  0010.
+Storage addresses 64 -- 67 are of course 
+0100 0000 to 0100 0011.
+
+<p>
+The format of each instruction is: IIII RRRR DDDD DDDD,
+where IIII is the coding that states the operation required,
+RRRR is the coding
+of which data register to use, and DDDD DDDD is the data, which is
+either a storage address or another register number.
+
+<pre>
+PRIMARY STORAGE
+
+address: contents
+-------  --------
+0:  ...
+1:  1001 0001 0100 0000
+2:  1001 0010 0100 0001
+3:  1010 0010 0000 0001
+4:  1001 0001 0100 0010
+5:  1010 0010 0000 0001
+6:  1011 0010 0100 0011
+7:  ...
+...
+64: 0000 0000 0000 0100
+65: 0000 0000 0000 0011
+66: 0000 0000 0000 0001
+67: ...
+...
+</pre>
+(Note: I have shortened the instructions to 16 bits, rather than use
+32, because I got tired typing lots of zeros!)
+
+<p>
+The example is a contrived, but it should convince
+you that it is indeed possible to write
+instructions in terms of binary codings that a control unit
+can decode, disassemble, and execute.
+
+<p>
+It is painful for humans to read and write such codings,
+which are called <em>machine language</em>,
+and there are abbreviations, called <em>assembly language</em>,
+that use text forms.  Here is a sample assembly-language version of the
+addition program:
+<pre>
+LOAD R1 64
+LOAD R2 65
+ADD R2 R1
+LOAD R1 66
+ADD R2 R1
+STORE R2 67
+</pre>
+
+
+<h4>Instruction cycle</h4>
+
+The <em>instructor cycle</em> are the actions taken by the processor
+to execute one instruction.
+Each time the processor's clock pulses (ticks) the 
+control unit does these steps:
+
+<small>(actually, modern processors do multiple instruction cycles
+for each clock pulse)</small>
+
+<ol>
+<li>
+uses the number in the instruction counter to <em>fetch</em>
+an instruction from primary storage and copy it into the instruction register
+<li>
+reads the pattern of bits in the instruction register and
+<em>decodes</em> the instruction
+<li>
+based on the decoding, tells the ALU to
+<em>execute</em> the instruction, which means that the ALU
+manipulates the registers accordingly.
+<li>
+There is a fourth step in the instruction cycle, an
+<em>interrupt check</em>, that we study later.
+</ol>
+Of course, the control unit is not alive, and it does not ``read'' or
+``tell'' anything to anyone, but there is wiring between
+electrical components that propagate
+electrical 0-1 signals --- a kind of falling domino game---
+that gives the appearance of conscious execution.
+<!--
+This illusion of ``life'' in the processor is one we happily maintain
+to retain an informal understanding about how the processor --- an
+electrical machine ---
+computes like a person would do so.
+-->
+
+<p>
+Here is a small example.  Say that the clock has ``ticked''
+(pulsed), and the instruction register holds 3.  
+Say that address 3 in primary storage holds the coding of
+the instruction,  ADD R2 R1.
+The instruction cycle might go like this:
+<ol>
+<li>
+Fetch:
+Consult the instruction counter; see it holds 0000 0011, that is, 3.
+Signal the memory controller to copy the contents of the cell
+at address 0000 0010
+into the data buffer.
+<p>
+When the instruction
+arrives, copy it from the data buffer into the instruction register.
+<p>
+Increment the instruction counter to 4 (that is, 0000 0100).
+<li>
+Decode:
+Read the first (leading or high-order) bits and see that they indicate
+an ADD.  Extract the bits that state the two registers to be added, here,
+R2 and R1.
+
+<li>
+Execute:
+Signal the ALU to add the values in registers 1 and
+2 and place the result in register 2.
+</ol>
+
+The previous description reads a bit tediously.  This is OK,
+because the processor is incredibly fast. Nonetheless, modern
+processors can be made even faster, because while the ALU is doing
+the execution step, the controller can start the fetch-and-decode
+steps of the <em>next</em> instruction cycle.  This form of
+speedup is called <em>pipelining</em> and is a topic intensively
+studied in computer architecture.
+
+<p>
+The forms of instruction that the processor can execute are called the
+<em>instruction set</em>. 
+
+<p>
+There are these forms of instructions found in an instruction set:
+<ol>
+<li>
+  data transfer between storage and registers (LOAD and STORE)
+<li>
+  arithmetic and logic (ADD, SUBTRACT, ...)
+<li>
+  control (test and branch)  (the ALU perhaps resets the instruction counter)
+<li>
+  input and output (the ALU sends a request on the system bus
+to an input/output device
+to read or write new information into storage)
+</ol>
+
+<!--
+Here is simple example instruction set, written in an assembly language,
+hiding the machine language:
+<pre>
+LOADCONST Ri k  // loads numeral  k  into register  Ri
+LOAD Ri Ra      // loads the number at storage address  Ra  into register  Ri
+COPY Rj Ri      // copies the contents of register Ri into register Rj
+
+ADD Rj Ri       // computes  Rj + Ri  and places the result in register Rj
+
+STORE Ri Ra    // stores the number in register  Ri into storage at address  Ra
+
+READ Ri Rdev   // reads one fullword of information from input device
+               //  Rdev  and places it in register Ri
+WRITE Ri Rdev  // sends the contents of register  Ri  to output device  Rdev
+
+IFZERO Ri Rj   // if the contents of Ri is 0, then reset the 
+               //  instruction counter to the value  in register Rj
+JUMP Rj        //  reset the instruction counter with the value in register Rj
+
+GOSUB Ri      // explained later
+RETURN        // explained later
+  (assumes stack in cache for holding return addresses, which are pushed
+   by GOSUB and popped by RETURN)
+</pre>
+
+
+Example: set  x = y / 2
+<pre>
+LOADCONST R1 y  // whatever y's address might be
+LOAD R2 R1
+LOADCONST 2 R1   // note reuse of R1
+DIVIDE R1 R2  // R1 holds  R1/R2
+LOADCONST x R1
+STORE R2 R1  // stores contents of R2 into M[R1]
+</pre>
+
+Example, set x = x / y, <em>provided that y is nonzero</em>
+<pre>
+LOADCONST y R1
+LOAD R2 R1
+IFZERO R2 L0   // ``jump'' to L0 if y 0
+LOADCONST R1 x
+LOAD R3 R1
+DIVIDE R3 R2
+STORE R3 R1
+L0: ..
+</pre>
+Note use of <em>label</em> L0 to denote an address that is saved
+in a register for a jump......
+-->
+
+<p>
+Even small examples are painful to write in assembly language,
+and people quickly developed simpler notations that could be
+mechanically converted to assembly (which could itself be mechanically
+converted into base-2 codings).
+
+<p>
+FORTRAN (formula translator language)
+is a famous example, developed in the
+1950's by John Backus. 
+When a human writes a program using FORTRAN, she writes a set
+of mathematical equations that the computer executes.
+Instead of using specific numerical storage addresses, names from
+algebra (``variable names''), like <tt>x</tt> and <tt>y</tt>,
+can be used instead. 
+
+<p>
+Here is an example, coded in FORTRAN, that places a value in a
+storage cell, named x, and then divides it by 2, saving the result again
+in the same cell:
+<pre>
+x = 3.14159
+x = x / 2
+</pre>
+
+And here is an example that divides x by y, saving the answer in x's
+cell, <em>provided that y has a non-zero value</em>:
+<pre>
+if ( y .NEQ. 0 )   x = x / y
+</pre>
+(read this as ``if y not-equal-to 0, then compute x = x / y'')
+
+<p>
+With some work, one can write a program that mechanically
+translates FORTRAN programs into (long) sequences of machine code;
+such a program is called a <em>compiler</em>.
+There is another ``translation program,'' called an <em>interpreter</em>,
+which does not convert a program to machine code, but instead
+reads a program one line at a time and tells the processor to execute
+``pre-fabricated'' sequences of instructions that match the program's
+lines.  These concepts are developed in another lecture.
+
+<p>
+Languages like FORTRAN (and COBOL and LISP and C and Java and ...)
+are called <em>high-level programming languages</em>.
+
+<h4>Secondary storage: disks</h4>
+
+The previous section stated that programs and numbers can be saved
+in primary storage.   But there is a limited amount of primary storage,
+and it is used to hold the program that the computer 
+executes now.   Programs and information that are saved for
+later use can be copied to <em>secondary storage</em>,
+such as the internal disk that is common to almost all computers.
+
+<p>
+Although it looks and operates differently than primary storage,
+it is perfectly fine to think of disk storage (and other forms of
+secondary storage, like a memory key or a CD), as a variant
+of primary storage, connected to the processor by means of the system
+bus, using its own controller to help read and write information.
+The main distinction is that secondary storage is <em>cheaper</em> (to buy)
+than primary storage, but it is <em>slower</em> to read and write information
+to and from it.
+
+<p>
+A typical computer uses disk secondary storage to hold a wide variety
+of programs that can be copied into primary storage for execution,
+as requested by the user.   Secondary storage is also used to
+archive data files.
+
+<p>
+Secondary-storage devices are activated when the processor executes
+a READ or WRITE instruction.  These instructions are not as simple to do
+as the LOAD and STORE instructions, because the secondary-storage
+devices are so slow, and the processor should not waste time,
+doing nothing, waiting for the device to finish its work.
+
+<p>
+The solution is: <em>The processor makes the request for a read or
+write and then proceeds to do other work</em>. 
+
+<p>
+Consider how a processor might
+execute a WRITE instruction to the disk; here is how the
+instruction cycle might go:
+<ol>
+<li>
+Fetch:
+The control unit obtains the instruction from primary storage and
+places it in the instruction register, as usual.
+<li>
+Decode:
+The control unit reads the instruction and determines that it is a WRITE.
+It extracts that name of the device to be read (the disk),
+it extracts the address on the device where the information should
+be written, and it extracts the name of the register than holds the
+information to be written.
+<li>
+Execute:
+The control unit writes the address and data to the disk's
+<em>address buffer</em> and <em>data buffer</em>, which are two
+fullwords in primary storage.  When these writes are finished, the controller
+signals the disk along the control lines of the system bus that there
+is information waiting for it in primary storage.
+</ol>
+Now that the processor has initiated the disk-write, it proceeds to the
+next instruction to execute, and at the same time, the disk starts
+to spin, its own controller does a read of primary storage for the
+address and data information saved there, and finally, the data
+is written from primary storage to the disk.
+
+<p>
+Each secondary-storage device has its own ``buffers'' reserved for it
+in primary storage --- this is simpler than wiring the processor
+for buffers for each possible storage device.
+
+<p>
+An important ``secondary storage'' device (actually, it is an output device!) is the
+computer's display.  A typical display is a huge grid of pixels (colored dots),
+each of which is defined by a trio of red-green-blue numerical values.
+The display has a huge buffer in primary storage, where there is one
+(or more) cell that
+describes the color of each pixel.
+A write instruction executed by the processor causes
+the display's buffer to be altered at the appropriate cells,
+and the display's controller (called the ``video controller'')
+reads the information in the buffer and 
+copies its contents to the display, thus repainting the display.
+
+<p>
+To summarize,
+here is a picture of a computer with
+buffers reserved for input/output devices in primary storage:
+<pre>
+<img src="mem2.jpg">
+</pre>
+It is important to see in the picture that (the controllers in) the various
+storage devices can use the system bus to read/write from primary storage
+<em>without bothering the processor.</em>  So, input and output
+can proceed at the same time that the processor executes instructions.
+
+<p>
+When a computer is connected to an outside network, the network
+can also be considered a kind of secondary-storage device that
+responds to read and write instructions, but the format of the
+reads and writes is far more complex --- they must include
+the address of the destination computer, the kind of data
+transmitted, the stage of interaction that is being done, etc.
+So, there are standardized patterns of bits,
+called <em>protocols</em>,
+that must be transmitted
+as ``reads'' and ``writes'' from the processor to the system bus
+to the port to the network.  To accomplish a complete read or
+write, there might well be multiple transmissions from
+processor to bus to port to network.
+The design of
+protocols is a crucial issue 
+to computer networks.
+
+
+<h4>Interrupts</h4>
+
+The previous section noted that a processor should not wait
+for a secondary-storage device to complete a write operation.
+But what if the processor asks the device to perform a read operation,
+how will the processor know when the information
+has been successfully read and deposited into the device's buffer
+in storage?
+
+<p>
+Here is a second, similar situation: A human presses the mouse's button,
+demanding attention from the processor (perhaps to start or stop
+a program or to provide input to the program that the
+processor is executing).  How is the processor signalled about the
+mouse click?
+
+<p>
+To handle these situations, all processors are wired for
+interruption of their normal executions.  Such an interruption
+is called an <em>interrupt</em>.
+
+<p>
+Recall the standard execution cycle:
+<ol>
+<li>
+fetch
+<li>
+decode
+<li>
+execute
+<li>
+check for interrupts
+</ol>
+and recall the extra register, the <em>interrupt register</em>,
+that is embedded in the processor:
+<pre>
+<img src="processor.jpg">
+</pre>
+The interrupt register is connected to the
+the system bus, so that when a secondary storage
+device has completed an action, it signals the control unit by
+setting to 1 one of the bits in the interrupt register.
+
+<p>
+Now,
+we can explain the final step of the execution cycle, the check for
+interrupts: After the execution step, the control unit examines
+the contents of the interrupt register, checking to see if any
+bit in the register is set to 1.  If all bits are 0, then no
+device has completed an action, so the processor can start a
+new instruction.
+
+<p>
+But if a bit is set to 1, then there is an <em>interrupt</em> ---
+the processor must pause its
+execution and do whatever instructions are needed:
+
+<p>
+For example, perhaps the user has pressed the mouse button.
+The device controller for the mouse sends a signal on the
+system bus to set to 1 the bit for a ``mouse interrupt''
+in the interrupt register.
+When the control unit examines the interrupt register at the
+end of its current execution cycle, it sees
+that the bit for the mouse is set to 1.  So, it resets the
+bit to 0 and <em>resets the instruction counter to the address
+of the program that must be executed whenever the mouse button is pressed</em>.
+Once the mouse-button program finishes, the processor can resume
+the work it was doing.
+
+<p>
+The mouse-button program is called an <em>interrupt handler</em>.
+
+<p>
+The previous story skipped a lot of details:  Where does the processor
+find the interrupt-handler program
+for the mouse? 
+What happens to the information resting in the registers
+if we must pause execution and start a new program,
+namely, the interrupt handler?  What if more
+than one interrupt bit is set?  What if a new interrupt bit gets
+set while the processor is executing the mouse-button program?
+
+<p>
+Some of the answers are a bit
+complex.   Based on this picture, we can provide simplistic
+answers:
+<pre>
+<img src="mem3.jpg">
+</pre>
+Cells in primary storage hold the addresses
+of the starting instructions for each of the interrupt handlers for
+the devices.  The sequence of addresses is called
+an <em>interrupt vector</em>.   The processor finds the address
+of the needed interrupt handler from the interrupt vector.
+
+<p>
+Before the processor starts executing an interrupt handler,
+it must copy the current values in all its registers
+to a <em>register-save area</em>
+in primary storage.  When the interrupt handler is finished,
+the values in the register-save area are copied back into the
+registers in the processor, so that the processor can resume
+what it was doing before the interrupt.
+
+<p>
+The case of multiple interrupts is not covered here, but the basic
+idea is that an executing interrupt handler can itself be interrupted
+and its own registers can be saved.
+
+
+<h4>The Operating System</h4>
+
+The previous narrative shows that the computer's operation
+is getting complicated --- there are special storage areas,
+special programs, etc.   It is useful to have a startup program
+that creates these special items and
+manages everything.
+
+<p>
+The startup- and manager-program is the <em>operating system</em>.
+When the computer is first started, the operating system is the
+program that executes first.  As noted, it initializes the computer's
+storage as well as the controllers for the various
+devices.  
+The interrupt handlers just discussed as considered parts of the
+operating system.
+
+<p>
+In addition, the operating system helps the processor execute
+multiple programs ``simultaneously'' by executing each program
+a bit at a time.   This technique, which is studied carefully
+in another lecture, is crucial so that a human user can start and use, say,
+a web browser and a text editor, at the same time.
+
+<p>
+The operating system is especially helpful at managing one particular
+output device --- the computer's display.
+The operating system includes a program called the <em>window manager</em>,
+which when executed, paints and repaints as needed
+the pixels
+in the display.  The window manager must be executing ``all the time,''
+even while the human user starts programs like a web browser, text
+editor, etc.   
+
+<p>
+The operating system lets the window manager repaint the  display
+in stages: when the
+window-manager program repaints the display, it must execute
+a sequence of
+WRITE instructions.  When the processor executes one of the
+WRITE instructions, this triggers the display's
+controller to paint part of the display.  When the display controller
+finishes painting the part, it sets a bit in the interrupt
+register so that the interrupt
+handler for the display can execute and tell the processor to
+restart the window manager and continue repainting
+the display.  In this way, the window manager is
+executing ``all the time,'' in starts and stops.
+
+<p>
+Here is a revised picture of the computer's storage, which
+shows the inclusion of the operating system (``OS'') and the division
+of the remaining storage for the multiple user programs that are
+executing:
+<pre>
+<img src="mem4.jpg">
+</pre>
+
+The actions of the operating system are developed in a later lecture.
+
+</body>
+
+<!--
+<h4>Other issues</h4>
+
+<ul>
+<li>
+storage: primary vs. cache vs. secondary....
+		   stored program vs hard-wired
+<li>
+forms of busses: point-to-point wiring vs. multipoint-bus
+<li>
+instruction pipelining
+</ul>
+
+
+  what is input and output?  what is a user?
+
+  How do these definitions connect to me and my PC?
+  How do these definitions connect to Masaaki's rice cooker?
+   (the chips in my car's engine? the controller in an elevator?
+    the autopilot in a plane?)
+
+what happens when we enter a request, e.g.,  print 2*3  ?
+
+bus : literally wires, one per bit,
+         data lines from register bits to storage bits
+	 address lines (which memory locn, which buffer in CPU)
+	 control line  (read/write, which device)
+      point-to-point vs. multipoint bus  (latter is more common)
+
+input/output:
+  display, disk, memory key, etc.  Connect to multibus.
+  some devices are complex (e.g. display) and can have their own
+  micro-processors e.g., video-controller for display.  This simplifies
+  complex i/o tasks: CPU sends a requested, coded in bits, down the
+  bus to controller, asking for i/o.  The convention is that the
+  CPU can copy all the details of its request into store and send a
+  short command directly to the micro-processor
+
+
+Standard setup:   (lecture1 slide 26):
+  memory connector to memory address buffer and decoder
+    and data buffer and memory control unit
+
+i/o can be memory-mapped (like store) or instruction based (accepts instructions) ???
+
+
+primary ``RAM''  vs.  secondary (disk, memory key, floppies....)
+  speed vs cost  (see lecture 2, slide 6, for speeds)
+
+Page 21: Pipelining: running in parallel the CPU hardware for
+  ins fetch
+  ins decode
+  calc operands
+  fetch operands
+  exec
+
+STEAL PICTURE FROM A SET OF NOTES
+
+
+Page 23: pipeline can be delayed due to data dependencies
+Technical problem: branches --- can predict one of two arms and discard
+(''flush'') if incorrect guess
+
+***
+
+Chapter 6 (caching):
+
+memory hierarchy:
+  registers then cache then RAM then disk then ....
+
+caches exploit _locality of reference_ : programs tend to reference
+memory locations near to recently reference memory locations;
+tend to reference the same locations again in the future (e.g. loops)
+
+cache is built from ``static'' (flip flop) memory;
+primary storage is ``dynamic'' (capacitor, recharged) memory ---
+  slower but cheaper
+
+See slide 6 bottom for Cache:  sits between CPU and store;
+idea is to copy whole block of store into cache, since it is likely
+that future refs will be waiting in the cache.  Cache is reloaded when
+a ref not found there
+
+[ another use of cache: data stack.  Some processors have instructions
+oriented towards using cache this way: push, pop, etc. ]
+
+*** MULTI-TASKING:
+
+computer is
+fundamentally sequential --- one process at a time
+  (raises issues regarding exec of user application at the same time
+but for moment, focus on how user application is read and executed
+
+
+We are moving to issues of process management:
+
+Classical (von Neumann architecture) is too primitive:
+  literally, one program (thread of execution) is all it can handle
+But modern computers must manage multiple threads simultaneously
+   (as, say, stock ticker on bottom of screen or web browser loading/displaying
+   a web page, or even showing the mouse move on the display)
+Each _process_ requires its own storage space and its share of the
+processor time.
+
+So, a helper program, an _operating system_, is normally loaded onto
+the computer first, and other processes interact with it to
+obtain storage and computer time.   Linux, Windows XP, etc....
+Uses hardware _interrupt mechanism_ to let processes share CPU time.
+
+Interrupts:
+  literally, what they say --- used to manage multiple activities, eg., i/o.
+  Processor provides interrupt register
+  that remember if an interrupt occurs.  at end of each exec cycle,
+  processor checks interrupt registers.  If one set, then
+  current state is saved and interrupt handler program jumped to.
+  On conclusion, state restored.   (Simplest to disable additional
+  interrupts while servicing one.)
+
+DIAGRAM INSTRUCTION CYCLE
+
+
+(explain in terms of data transfer to output device;
+no need to wait for device to finish, run ahead to next instruction to do.)
+
+-->

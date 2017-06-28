@@ -1,0 +1,47 @@
+
+package Arithmetic;
+import Stack.*;
+/** PostfixTranslator translates an infix expression into postfix */
+public class PostfixTranslator
+{
+  private StringReader reader;  // holds the input infix expression
+  private Stack st;             // a stack to help with the translation
+
+  /** Constructor PostfixTranslator initializes the translator
+    * @param r - the object that holds the input infix expression */
+  public PostfixTranslator(StringReader r)
+  { reader = r;
+    st = new Stack();
+  }
+
+  /** translate does the translation from infix to postfix
+    * @return a string that is the postfix translation of the infix
+    *   expression that was supplied to the constructor method
+    * @throw RuntimeException if there is a syntax error in the infix
+    *   expression */
+  public String translate()
+  { String answer = "";
+    char c = reader.nextChar();
+    while ( c != StringReader.END_CHAR )
+          { if ( c >= '0' && c <= '9' )  // a numeral?
+               { answer = answer + c; }
+            else if ( c == '+'  ||       // an operator?
+                      c == '-'  ||
+                      c == '*'  ||
+                      c == '/' )
+                    { st.push(new Character(c)); }
+           else if ( c == ')' )         // right paren means pop an operator
+                   { Character C = (Character)(st.pop());
+                     answer = answer + C.charValue(); }
+           else if ( c == '(' )         // left paren has no significance
+                   { }
+           else { throw new RuntimeException("Syntax error in expression"); }
+         
+           c = reader.nextChar();
+         }
+    if ( ! st.isEmpty() )
+       { throw new RuntimeException("Syntax error in expression"); }
+    return answer;
+  }
+}
+

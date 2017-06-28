@@ -1,0 +1,207 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Time complexity measures</h2>
+
+<!--
+First, you must read the background material on sorting and
+searching from Chapter 8 of the CIS200 lecture notes.
+The relevant sections are
+Sections 8.7.3-8.7.6, and you can find them excerpted at
+<a href="http://www.cis.ksu.edu/~schmidt/CIS200/ch8V11.sort.search.html">
+<tt>http://www.cis.ksu.edu/~schmidt/CIS200/ch8V11.sort.search.html</tt></a>
+
+<p>
+The material that follows summarizes the
+tables and calculations presented in lecture.
+-->
+
+First, here is some review:
+
+<h4>Sorting</h4>
+
+<p>
+<em>Sorting</em> is the process of ordering the elements in an array
+so that they are in ascending order with respect to the elements'
+keys.
+
+<p>
+<em>Selection sort</em> orders an array's elements by repeatedly finding the
+least element in the unsorted segment of the array and exchanging
+that element with the leftmost element of the unsorted segment.
+See Section 8.7.3 for a detailed example.
+
+<p>
+<em>Insertion sort</em> moves each array element to the left until it finds its
+proper place in the sorted left end of the array.  Again, Section 8.7.3
+gives details and examples.
+
+<h4>Binary search</h4>
+
+The reason for sorting an array is that we search the array ``quickly.''
+
+<p>
+An unsorted array is searched by a naive <em>linear search</em> that
+scans the array elements one by one until the desired element is found.
+If the array is sorted, we can employ <em>binary search</em>, which
+brilliantly halves the size of the search space each time it examines
+one array element.  Binary search is described and illustrated in
+Section 8.7.4.
+
+<p>
+Binary search is lots faster than linear search.  Here are some
+comparisons:
+<pre>              NUMBER OF ARRAY ELEMENTS EXAMINED:
+array size   |     linear search       binary search
+             |      (avg. case)         (worst case)
+--------------------------------------------------------
+        8    |        4                  4
+      128    |       64                  8
+      256    |      128                  9
+     1000    |      500                 11
+   100,000   |     50,000               18
+</pre>
+
+<h4>Time complexity</h4>
+
+<p>
+The preceding numbers are so startling that they demand closer scrutiny.
+The equation that defines the elements examined for linear search is of
+course:
+<pre>
+L(N) = N / 2
+</pre>
+Read this equation as saying, ``for an array of length <em>N</em>,
+the number of array lookups needed, <em>L(N)</em>,
+equals <em>N / 2</em>.''
+On the average, the desired element will be found in about the
+middle of the array---N/2  elements will be examined.
+
+<p>
+Binary search has a markedly different behaviour:  In the worst case,
+the number of lookups, <em>B(n)</em> for an array of length <em>N</em>
+is defined as
+<pre>
+B(N) = 1 + B( N/2 )
+</pre>
+because searching an array sized N requires one examination of the element
+in the middle, followed by a binary search of either the left half
+or the right half of the array, each of which has  N/2  elements.
+
+<p>
+Finally, we note that
+<pre>
+B(1) = 1
+</pre>
+because a one-element array requires just one element to be examined.
+
+<p>
+The calculations found in the earlier lecture, in Section 8.7.4,
+show that the above equations define this quantity:
+That is,
+pretending that
+the array's length is a power of 2,
+that is,
+<tt>N = 2<sup>M</sup></tt>, for some positive <tt>M</tt>,
+we have that
+<pre>
+B(2<sup>M</sup>) = 1 + B(2<sup>M-1</sup>),  for  M > 0
+B(2<sup>0</sup>) = 1
+</pre>
+Using a mathematical induction prove, we can show that
+these equations simplify to merely
+<pre>
+B(N) = log<sub>2</sub>N + 1
+</pre>
+(Recall that log<sub>2</sub>N is the <em>base 2 logarithm</em> of N.
+For example,  log<sub>2</sub>8 is 3, because
+2<sup>3</sup> equals 8.)
+
+<p>
+The above analysis shows that binary search can handle huge sorted arrays
+remarkably well.  This behaviour is typical of
+<em>divide and conquer</em> algorithms, which repeatedly halve the search
+space.
+
+<h4>Basic time-complexity classes</h4>
+
+Linear search has <em>linear-time complexity</em>;
+binary search has <em>log-time complexity</em>.
+There are other classes of complexity, for example,
+<em>quadratic-time complexity</em> and
+<em>exponential-time complexity</em>.
+
+<p>
+Here is a table that provides some intuition about the running speeds
+of algorithms that belong to these classes:
+<pre>
+          Logarithmic: Linear: Quadratic:  Exponential:
+array size   |  log<sub>2</sub>N       N        N<sup>2</sup>      2<sup>N</sup>   
+--------------------------------------------------------
+        8    |    3         8        64      256
+      128    |    7       128    16,384    3.4*10<sup>38</sup>
+      256    |    8       256    65,536    1.15*10<sup>77</sup>
+     1000    |   10      1000   1 million  1.07*10<sup>301</sup>
+   100,000   |   17   100,000   10 billion    ....
+</pre>
+
+<p>
+Binary search and other divide-and-conquer algorithms have logN time
+complexity; we say that they have ``order logN'' and sometimes write
+this as <em>O(logN)</em> (the ``O'' means ``order of''.)
+
+<p>
+Linear search and the Java compiler (and most compilers) have linear
+time complexity: <em>O(N)</em>
+
+<p>
+Selection and insertion sorts have quadratic time complexity:
+<em>O(N<sup>2</sup>)</em>.
+
+
+<p>
+Exhaustive searching and naive game-playing programs (e.g., chess)
+have exponential time complexity: <em>O(2<sup>N</sup>)</em>.
+(To get a rough intuition for this time-complexity class,
+consider a naive sorting algorithm that would generate
+<em>all possible orderings</em> of the elements in an array and
+keep those orderings that it is building that remain sorted. 
+This would generate roughly
+<em>2<sup>N</sup></em> combinations of the array's elements!)
+
+<p>
+In practice, an on-user becomes impatient waiting on a result
+from an algorithm that has
+quadratic time complexity or slower.  This poses a problem for sorting
+algorithms.  Fortunately, there are clever variants on sorting
+that employ divide-and-conquer.  These algorithms
+operate in the range, <em>O(N*log<sub>2</sub>N)</em> (``order N log N'').
+<em>Merge sort</em> and <em>quicksort</em> are two elegant examples.
+
+<p>
+You should
+see Section 8.7.6 for the details for merge sort and quicksort.
+But the basic idea is this:
+<ol>
+<li>
+divide the unsorted array, of size N, into two halves.
+<li>
+sort each subarray, each of size N/2.
+<li>
+merge the two sorted subarrays into the sorted, full array
+</ol>
+Incredibly, the division of labor speeds the sorting:
+Look at the above table to see that sorting 
+two arrays of size  N/2 goes much faster than sorting one array of
+size N!  And the merging of two sorted arrays takes only linear time.
+This goes faster than quadratic time.
+
+<p>
+The complexity class, <em>O(N*log<sub>2</sub>N)</em>, of
+merge sort and quicksort
+is slower than linear time but faster than quadratic time.
+In practice, quicksort is the algorithm of choice for sorting
+arrays whose elements are completely mixed up.
+
+</body>
+

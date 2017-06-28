@@ -1,0 +1,600 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+<h2>Adding Java Interfaces to the Database Example</h2>
+
+From
+the case study, we learned these crucial points:
+<ol>
+<li>
+Databases have operations (methods) for insertion, lookup, and deletion
+of <tt>Record</tt>s, where each record owns a unique <tt>Key</tt>.
+<li>
+<tt>class Database</tt> is coded with no knowledge about the internal
+structure of <tt>Record</tt>s and <tt>Key</tt>s.  
+<li>
+Later, we write specific versions of <tt>class Record</tt> and
+<tt>class Key</tt> to model bank accounts and their id numbers,
+or library books and their catalog numbers, or whatever we wish.
+</ol>
+The reason why Item 2 holds true is because we assume that,
+whatever a <tt>class Record</tt> or <tt>class Key</tt> might be,
+they have these operations:
+<p>
+<table BORDER CELLPADDING=5  >
+
+<tr>
+<td>
+<tt>Record</tt>
+</td>
+<td>
+a data item that can be stored in a database
+</td>
+</tr>
+
+<tr>
+<td>
+Methods
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>getKey(): Key</tt>
+</td>
+<td>
+Returns the key that uniquely identifies the record.
+</td>
+</tr>
+</table>
+
+<p>
+<table BORDER CELLPADDING=5  >
+
+<tr>
+<td>
+<tt>Key</tt>
+</td>
+<td>
+an identification, or ``key,'' value
+</td>
+</tr>
+
+<tr>
+<td>
+Methods
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>equals(Key m): boolean</tt>
+</td>
+<td>
+Compares itself to another key, <tt>m</tt>, for equality.  If this key
+and <tt>m</tt> are
+same key value, then <tt>true</tt> is returned;
+if <tt>m</tt> is a different key value, then <tt>false</tt>
+is returned.
+</td>
+</tr>
+
+</table>
+
+Later, we write codings of records and keys that have these operations.
+
+<p>
+As noted at the end of the case study, the development of
+<tt>class Database</tt> isn't quite perfect:  With the current coding:
+<ul>
+<li>
+Whatever we code for the records, albeit bank accounts, books, people,
+or stamps, we must name it <tt>class Record</tt>.  (There is the same
+problem for all forms of key, which all must be named <tt>class Key</tt>.)
+This is unnatural and will
+cause big trouble when we try to use more than one form of record or
+key in the same program!
+<li>
+We cannot place <tt>class Database</tt> in a package by itself and save
+it for later use, because it refers to <tt>class Record</tt> and
+<tt>class Key</tt>, and these classes are not yet written.
+</ul>
+We can repair these problems with the help of Java <tt>interface</tt>s.
+
+
+<p>
+Figure 5 shows how to transform the descriptions of
+<tt>Record</tt> and <tt>Key</tt> into Java
+<tt>interface</tt>s.
+<pre>FIGURE 5: interfaces for Record and Key===============================
+
+package DB;
+/** Record is a data item that can be stored in a database  */
+public interface Record
+{ /** getKey returns the key that uniquely identifies the record
+    * @return the key  */
+  public Key getKey();     // NOTICE THE SEMICOLON---IT IS REQUIRED!
+}
+
+
+package DB;
+/** Key is an identification, or ``key,'' value   */
+public interface Key
+{ /** equals  compares itself to another key, m, for equality
+    * @param m - the other key
+    * @return true, if this key and  m  have the same key value;
+    *  return false, otherwise  */
+  public boolean equals(Key m);  // NOTICE THE SEMICOLON---IT IS REQUIRED!
+}
+
+ENDFIGURE=============================================================</pre>
+These interfaces are placed in the same package (folder) as 
+<tt>class Database</tt>, and all three are compiled together.
+(Say that the package is named,  <tt>package DB</tt>, as used in
+Figure 5 above.  Of course this means that <tt>class Database</tt>
+is slightly altered so that it reads
+<pre>
+package DB;
+public class Database
+{ ... }
+</pre>
+)
+
+<p>
+Note again how <tt>class Database</tt>
+refers to <tt>Record</tt> and <tt>Key</tt> in its fields and
+methods.   Now, the Java compiler will understand that the names
+<tt>Record</tt> and <tt>Key</tt> are names of interfaces --- connection
+points --- to classes that will be written later and will implement
+the interfaces.
+
+<p>
+Here is a class diagram of <tt>package DB</tt>:
+<pre>
+<img src="DatabaseExample/db0.gif">
+</pre>
+
+
+<p>
+Now we are ready to use the database in an application.
+Perhaps we are building a cataloguing program for a library,
+so we wish to implement a database that holds records about books.
+We can write another package, say, <tt>package Library</tt>,
+that holds records about books and keys that are catalog numbers.
+Here are the codings of the records and keys:
+<pre>FIGURE 6: implementing the database's interfaces==========================
+
+package Library;
+import DB;  // needed so that we can refer to the  Record  interface
+/** Book models a Library Book */
+public class Book implements Record
+{ private Key catalog_number;
+  private String title;
+  private String author;
+  private int publication_date;
+
+  /** Constructor Book constructs the book's record
+    * @param num - the book's catalog number
+    * @param a - the book's author
+    * @param t - the book's title   */
+  public Book(Key num, String a, String t, int date)
+  { catalog_number = num;
+    title = t;
+    author = a;
+    publication_date = date;
+  }
+
+  /** getkey  returns the key that identifies the record
+    * @return the key  */
+  public Key getKey() { return catalog_number; }
+
+  /** getTitle returns the book's title
+    * @return the title */
+  public String getTitle() { return title; }
+
+  /** getAuthor returns the book's author
+    * @return the author */
+  public String getAuthor() { return author; }
+
+  /** getDate returns the book's publication date
+    * @return the date */
+  public int getDate() { return publication_date; }
+}
+
+
+package Library;
+import DB;
+/** CatalogNumber models a Library-of-Congress-style id number,
+  *  consisting of a letter sequence and a decimal number, e.g., QA76.884  */
+public class CatalogNumber implements Key
+{ private String letter_code;  // the letter code, e.g.,  "QA"
+  private double number_code;  // the number code, e.g.,  76.884
+
+  /** Constructor CatalogNumber constructs a catalog number
+    * @param letters - the letter code, e.g.,  "QA"
+    * @param num - the decimal number code, e.g.,  76.884 */
+  public CatalogNumber(String letters, double num)
+  { letter_code = letters;
+    number_code = num;
+  }
+
+  /** equals returns whether the catalog number held within this object
+    *  is identical to the catalog number held within  c
+    * @param c - the other catalog number
+    * @return true, if this catalog number equals  c; return false, otherwise */
+  public boolean equals(Key c)
+  { String s = ((CatalogNumber)c).getLetterCode();
+    double d = ((CatalogNumber)c).getNumberCode();
+    return ( s.equals(letter_code)  &&  d == number_code );
+  }
+
+  /** getLetterCode returns the letter code part of this catalog number
+    * @return the letter code, e.g.,  "QA"  */
+  public String getLetterCode() { return letter_code; }
+
+  /** getNumberCode returns the number code part of this catalog number
+    * @return the number code, e.g.,  "76.884"  */
+  public double getNumberCode() { return number_code; }
+}
+
+
+ENDFIGURE============================================================</pre>
+
+Note that
+<ul>
+<li>
+<tt>class Book implements Record</tt>,
+<tt>class CatalogNumber implements Key</tt>.
+This ``connects'' the two classes to the two interfaces, and it means
+that <tt>Book</tt> objects may be inserted into a <tt>Database</tt>
+object.
+<li>
+Both <tt>class Book</tt> and <tt>class CatalogNumber</tt> are
+listed as belonging to another package, <tt>package Library</tt>.
+<li>
+Both classes must <tt>import DB</tt> so that the interface names,
+<tt>Record</tt> and <tt>Key</tt> can be referenced.  (This helps the
+Java compiler make the connection between the classes and their interfaces.)
+<li>
+Both of the two classes have more methods than just the ones listed
+in interfaces <tt>Record</tt> and <tt>Key</tt>.  This is acceptable,
+and does not interfere with connecting the classes to the interfaces.
+</ul>
+
+<p>
+Class <tt>Book</tt>, keeps its catalog number as an attribute
+and gives it away with its <tt>getKey</tt> method; the class
+knows nothing about how its key is coded, but this does not matter.
+The second class, <tt>CatalogNumber</tt>, uses a string and a double as
+its internal state.  The latter's <tt>equal</tt> method holds particular
+interest:
+
+<tt>CatalogNumber</tt>'s <tt>equals</tt> method must
+compare its string and its double to the string and double
+to the integer held in its
+argument, <tt>c</tt>. 
+To do
+this, <tt>c</tt> must be <em>cast</em> into its
+underlying type, <tt>CatalogNumber</tt>, so that the <tt>getNumberCode</tt>
+and <tt>getNumberCode</tt> methods
+can be queried for <tt>c</tt>'s string and its double:
+<pre>
+  public boolean equals(Key c)
+  { String s = ((CatalogNumber)c).getLetterCode();
+    double d = ((CatalogNumber)c).getNumberCode();
+    return ( s.equals(letter_code)  &&  d == number_code );
+  }
+</pre>
+The reason for this extra work, is that the Java compiler needs some
+help at determining exactly what type of object the ``Key'' <tt>c</tt>
+really is.  From the perspective 
+of the Java compiler, an object that is a <tt>Key</tt>
+does not necessarily possess a <tt>getLetterCode</tt>
+or <tt>getNumberCode</tt> method;  the cast
+tells the compiler that <tt>c</tt> is actually
+a <tt>CatalogNumber</tt>, which does possess the two methods.
+
+<p>
+Unfortunately, we cannot avoid the cast
+by writing <tt>equals</tt>'s header line as
+<pre>
+public boolean equals(CatalogNumber c)
+</pre>
+because the parameter's data type <em>would not match</em> the
+description of <tt>equals</tt> in
+<tt>interface Key</tt>.  We must live with this Java clumsiness.
+
+<p>
+Now, we can build
+a database that holds <tt>Book</tt> records:
+<pre>
+Database db = new Database(1000);  // see Figure 4 in the Case Study
+CatalogNumber k = new CatalogNumber("Z", 2.5);
+Book b = new Book(k, "Great Expectations", "Charles Dickens", 1860);
+
+boolean success = db.insert(b);  // saves (the address) of object  b  in  db
+
+Record find_me = db.find(k);  // returns the address of the record whose key
+              //  is equal to  k.  Of course, this will be the address of  b
+
+System.out.println( ((Book)find_me).getTitle() );  // the cast tells the
+               //  Java compiler that it's OK to  getTitle  from the record
+</pre>
+
+<p>
+Figure 7 shows the card catalogue's class diagram.
+<pre>FIGURE 7: class diagram with interfaces==================================
+
+<img src="DatabaseExample/db.gif">
+
+ENDFIGURE==============================================================</pre>
+The diagram shows that <tt>Database</tt> is coupled only to the two
+interfaces and not to the classes that implement the interfaces.  This
+is a clear signal that other classes of records and keys can be
+used with <tt>class Database</tt>.
+
+<p>
+Another interesting feature of the structure is that <tt>class Book</tt>
+is not coupled to <tt>class CatalogNumber</tt>!  This means that other
+forms of keys can be used to identify book objects.
+ 
+
+<h3>Subtypes and Behavior</h3>
+
+
+The Java compiler uses <tt>interface</tt>
+names as data type names, and the compiler enforces
+a <em>subtyping relationship</em> when an interface is implemented: 
+if <tt>class C implements I</tt>,
+then the data type <tt>C</tt> is a <em>subtype</em>
+of the datatype <tt>I</tt>.
+It is time to study some of
+the consequences.
+
+<p>
+We take for granted that the numeric primitive types
+are related 
+by a subtyping relationship:
+<tt>int</tt> is a subtype of
+<tt>double</tt>, written <tt>int <= double</tt>, because an
+integer can be used in any situation where a double is required,
+for example: <tt>double d = 4</tt>  is an acceptable initialization.
+Similarly, if a method expects an argument that is a double, as in
+<pre>
+public double inverseOf(double d)
+{ return  1.0 / d; }
+</pre>
+We can send the method an
+integer, e.g., <tt>inverseOf(3)</tt>.
+Subtyping relationships simplify our programming;
+in particular, cumbersome cast expressions are not required.
+For example, it is technically correct but ugly to write
+<tt>double d = (double)4</tt>, and thanks to subtyping, we may
+omit the cast. 
+
+<p>
+In addition to primitive data types, there are object or <em>reference</em>
+data types, e.g.,  <tt>JFrame</tt> is a reference data type.
+There are subtyping relationships between reference types.
+For example, if we write the class,
+<tt>public class MyFrame extends JFrame</tt>,
+then a new subtyping relationship is created: <tt>MyFrame <= JFrame</tt>.
+Similarly, when a class implements an interface, e.g.,
+<tt>public class Book implements Record</tt>, <em>a subtyping relationship
+is created</em>,  <tt>Book<= Record</tt>.
+
+<p>
+As with primitive data types,
+subtyping relationships between reference types
+establish compatibility.
+For example, if <tt>MyFrame extends JFrame</tt>,
+then a <tt>MyFrame</tt>
+object can be used in any context where a <tt>JFrame</tt> object is
+expected. An example is
+<pre>
+public void resetTitle(JFrame f, String s)
+{ f.setTitle(s); }
+  ...
+MyFrame my_view = new MyFrame();
+resetTitle(my_view, "Hello");
+</pre>
+Method <tt>resetTitle</tt> expects an argument that is a <tt>JFrame</tt>,
+because it invokes <tt>JFrame</tt>'s <tt>setTitle</tt> method.
+But the actual parameter, <tt>my_view</tt> is acceptable because its
+data type is a subtype of <tt>JFrame</tt>, implying that <tt>my_view</tt>
+also has a <tt>setTitle</tt> method.
+
+<br>
+These ideas carry over to subtyping relationships
+created from implementing interfaces.
+In the example,
+<pre>
+Database db = new Database(1000); 
+CatalogNumber k = new CatalogNumber("Z", 2.5);
+Book b = new Book(k, "Great Expectations", "Charles Dickens", 1860);
+db.insert(b); 
+</pre>
+the database method, <tt>insert</tt>, expects arguments of types
+<tt>Record</tt> but it operates properly with ones
+of type <tt>Book</tt>
+because of the subtyping relationships. 
+
+<br>
+If we peek inside computer storage, we see that the above statements
+constructed these objects:
+<pre>
+               ----                         ----
+Database db ==| a1 |     CatalogNumber k ==| a3 |
+          ---- ----                  ------ ----
+Book b ==| a4 |   boolean success ==| true |
+          ----                       ------
+
+  a1 : Database
+ ----------------   ----
+ | Record[] base ==| a2 |
+ |              --- ----
+ | int count ==| 1 |
+ |              ---
+
+  a2 : Record[4]
+ --------------------
+ |    0    1      2     ...
+ | --------------------------
+ | | a4 | null | null | ...
+ |  -------------------------
+
+
+  a3 : CatalogNumber                  a4 : Book
+ -----------------                  -------------------
+ |  String letter_code ==| "abc" |  | Key k ==| a3 |
+ |  double number_code ==| 2.5 |    | String title ==| "Great Expectations" |
+ |                                  |                 ----------------------
+                                    | String author ==| "Charles Dickens" |
+                                    |                    -----------------
+                                    | int date ==| 1860 |
+</pre>
+The diagram reminds us that every object in storage is labelled
+with the name of the class from which the object was constructed.
+This is the <em>run-time data type</em> of the object.  The diagram
+also illustrates that run-time data types are distinct from the
+data types that appear in assignments.  For example,
+the object at address <tt>a4</tt> retains its run-time data type,
+<tt>Book</tt>, even though it was assigned into an element of an array
+declared to hold <tt>Record</tt>s.  (Look at <tt>a2</tt>'s run-time data
+type.)  The situation is acceptable because of the subtyping relationship.
+
+<p>
+Consider the
+following statements, which build on the above:
+<pre>
+Record find_me = db.find(k);
+
+System.out.println( ((Book)find_me).getTitle() );  
+</pre>
+The first statement extracts from the data base the record whose key
+equals 
+<tt>k</tt>, that is, <tt>a4</tt> is assigned to <tt>find_me</tt>.
+But we <em>cannot</em> say, immediately thereafter,
+<tt>find_me.getTitle()</tt>, because variable <tt>find_me</tt>
+was declared to have
+data type <tt>Record</tt>, and there is no <tt>getTitle</tt>
+method listed in <tt>interface Record</tt>.  The problem is that the data
+base method, <tt>find</tt> returns an object whose data type is
+<tt>Record</tt>.
+
+<p>
+This is frustrating to the programmer, who knows that <tt>db</tt>
+is holding <tt>Book</tt> objects, but Java's compiler and interpreter
+are not
+intelligent enough to deduce this fact.  Therefore, the programmer
+must 
+write an explicit cast upon <tt>find_me</tt>,
+namely, <tt>(Book)find_me</tt>, to tell the Java compiler
+that <tt>find_me</tt> holds an address of an object whose
+run-time type will be <tt>Book</tt>.
+Only then, can the <tt>getTitle</tt> message be sent.
+
+<p>
+If the programmer encounters a situation where she is not certain
+herself what is extracted from the database, then the <tt>instanceof</tt>
+operation can be used to ask the extracted record its data type, e.g.,
+<pre>
+Record mystery_record = db.find(mystery_key);
+if ( mystery_record instanceof Book)
+     { System.out.println( ((Book)mystery_record).getTitle() ); }
+else { System.out.println("unknown record type"); }
+</pre>
+Stated precisely, the phrase, <tt>EXPRESSION instanceof TYPE</tt>,
+returns <tt>true</tt> exactly when the run-time data type attached to the
+object computed by <tt>EXPRESSION</tt> is a <em>subtype</em> of
+<tt>TYPE</tt>.
+
+<p>
+You can read more about interfaces in Chapter 9 of the CIS200 notes:
+<a href="http://www.cis.ksu.edu/~schmidt/CIS200/">
+<tt>http://www.cis.ksu.edu/~schmidt/CIS200/</tt></a>
+
+<p>
+<br>
+<hr><hr>
+<h3>Directories for source code listings</h3>
+
+The packages, <tt>DB</tt> and <tt>Library</tt>, are
+located at
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample">
+<tt>http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample
+</tt></a>
+
+<p>
+The API documentation is located nearby:
+<p>
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/DB/package-summary.html">
+<tt>www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/DB/package-summary.html</tt>
+</a>
+and
+<p>
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/Library/package-summary.html">
+<tt>www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/Library/package-summary.html</tt>
+</a>
+
+
+<h4>A complete application</h4>
+
+<p>
+At the same location,
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample">
+<tt>http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample
+</tt></a>,
+there is a test application,
+<tt>package TestTheDatabase</tt>,
+that uses <tt>package DB</tt>
+to build a different application with a graphical user interface.
+
+<p>
+The application builds and saves ``<tt>BasicPerson</tt>''
+records about people
+(A <tt>BasicPerson</tt> records holds a key,
+a name, and some personal information. The key objects are
+``<tt>StringKey</tt>''s, which hold a string that acts as a person's unique
+ID.)
+
+<p>
+To start the application, type
+<pre>
+java TestTheDatabase.Start
+</pre>
+You will see a frame with three buttons that you can push: 
+<pre>
+<img src="DatabaseExample/test1.gif">
+</pre>
+When
+you press <tt>Insert</tt>, you will be asked to invent
+a string that will be used to construct a <tt>StringKey</tt> object.
+Then, you will be asked to type a person's name and some personal information.
+The <tt>StringKey</tt> object, the name, and the information
+are inserted into a
+newly constructed <tt>BasicPerson</tt> object, which is stored in the database.
+
+<p>
+Now, press <tt>Find</tt> and see what happens---you are asked to type
+a string that can be used to construct a <tt>StringKey</tt>
+object and do a lookup in the
+database.
+
+<p>
+The example shows how <tt>package DB</tt> is used in a completed application.
+The example also shows how a new collection of classes implement
+<tt>interface Key</tt> and <tt>interface Record</tt>.
+
+<p>
+The API documentation for the application is at
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/TestTheDatabase/package-summary.html">
+<tt>www.cis.ksu.edu/~schmidt/300s05/Lectures/DatabaseExample/TestTheDatabase/package-summary.html</tt>
+
+
+
+</body>
+

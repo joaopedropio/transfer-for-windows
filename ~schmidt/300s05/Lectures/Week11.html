@@ -1,0 +1,450 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Hash Tables</h2>
+
+Much effort in the data structures field is devoted to designing structures
+that can save objects based on the objects' keys.
+Ideally, the objects are inserted, retrieved, and deleted in
+less than linear time.  For example, binary search of a sorted array
+of <em>N</em> objects takes on the order of
+<em>log<sub>2</sub> N</em> time,  as does insertion and lookup
+of ordered trees (binary search trees).
+
+<p>
+In the previous lecture, we learned that an object whose key is
+a sequence of symbols can be stored within a
+spelling tree, where the insertion/lookup time is related to the length of
+the key, whose length is on the order of
+<tt>log<sub>m</sub>N</tt>, where <tt>N</tt> is the total 
+number of objects that might be inserted into the tree,
+and <tt>m</tt> is the size of the alphabet used to write the keys.
+
+<p>
+(Note that, when <tt>m</tt> is 2, then the keys are just binary
+numerals, and the spelling tree is a variant of a binary search tree.)
+
+<p>
+Is there any data structure that lets us do
+insertion, retrieval (and deletion) in better than
+<tt>log<sub>m</sub>N</tt> time?
+Only the array data structure
+has this behavior:  If an array has length  <tt>N</tt>,
+and if the keys are integers in the range, 0..<tt>N-1</tt>,
+then array lookup/insertion operates in <em>constant</em> time ---
+the integer index is multiplied by the array's elements' size and added to
+the address of
+the array's starting location; this gives the location of
+the desired element in 2 fixed steps of arithmetic.
+
+<p>
+But remember that
+<em>integers are coded as binary numerals</em> --- sequences of
+1s and 0s ---
+so the integers are ``really'' keys coded with a 2-symbol alphabet,
+stored in one 32-bit computer fullword.
+<em>But the computer chip is hardwired to compute on fullwords
+quickly, even processing the bits in parallel</em>. 
+As a result, array indexing
+takes a ``constant'' amount of time.
+
+<p>
+To have this speed in processing,
+we must restrict the ``keys'' used to index an array to
+be fullword integers in some range, 0..N-1
+(or use a finite set of keys that simply map one-one and onto  0..N-1,
+e.g., characters like <tt>'a', 'b', 'c', ...</tt>).
+Alas, the real world rarely uses a fullword integer as the identification
+key for a person, an automobile, or a book.
+
+<p>
+Is there a technique that lets us use ordinary keys --- sequences of
+symbols --- with an array?
+
+<!--
+<p>
+Our dream is to use
+an array, <tt>r</tt>, so that we insert object <tt>e</tt> with
+key, <tt>k<sub>e</sub></tt> as
+<pre>
+r[ k<sub>e</sub> ] = e;
+</pre>
+we retrieve the object with the key by stating,
+<pre>
+r[ k<sub>e</sub> ]
+</pre>
+and we delete the object by assigning some ``dummy'' value to the cell:
+<pre>
+r[ k<sub>e</sub> ] = null;
+</pre>
+A secondary disadvantage of this approach is that almost all of the space
+in the array is empty.
+-->
+
+<h4>Hash table: an array with ``smarter'' keys</h4>
+<p>
+A <em>hash table</em> is an attempt to use an array as a data structure
+for holding keyed objects.  In its basic form, a hash table is an
+array, indexed by 0..N-1.  But the keys that go with objects might
+be sequences, e.g.,  515569876  or  <tt>QA76.345Z</tt>  or "Fred Mertz".
+These keys must be mechanically
+<em>translated</em> into integers in the range 0..N-1.
+The translator function is called a <em>hashing function</em>, and
+a key is translated by a hashing function into its <em>hash code</em> ---
+the hash function translates the key into a hash code in the range,
+0..N-1.
+
+<p>
+Let <tt>h</tt> be the name of the hashing function.  Then, we
+write <tt>h(k)</tt> to get the hash code returned for key <tt>k</tt>.
+The basic plan is simple:
+<ol>
+<li>
+Construct a hash table as an array, <tt>r</tt>,
+that holds objects indexed by  0..N-1.
+Initialize all <tt>r</tt>'s elements to <tt>null</tt>.
+<li>
+To insert an object, <tt>e</tt>, into the array, translate its key,
+<tt>k<sub>e</sub></tt> into its hash code,
+<tt>h( k<sub>e</sub> )</tt> and save in the array:
+<pre>
+r[ h( k<sub>e</sub> ) ] = e;
+</pre>
+<li>
+To retrieve the object with key <tt>k</tt>, translate the key to its hash
+code and index the array:
+<pre>
+r[ h( k<sub>e</sub> ) ]
+</pre>
+<li>
+Delete the object with key <tt>k</tt> as
+<pre>
+r[ h( k<sub>e</sub> ) ] = null;
+</pre>
+</ol>
+
+<p>
+For this scheme to work, we must devise <tt>h</tt> as follows:
+<ul>
+<li>
+It must be completely mechanical, e.g., a Java function.
+<li>
+It must be completely deterministic, that is,
+for a sequence of symbols, <tt>k</tt>, <tt>h(k)</tt> computes the
+same integer result for <tt>k</tt> every time <tt>h(k)</tt> is called.
+<li>
+The algorithm that <tt>h</tt> uses to compute the hash code
+must be completely
+independent of the knowledge of which objects
+are already
+inserted into the hash table.
+<li>
+<tt>h</tt> must be relatively fast, that is, have time complexity
+on the order of 
+the length of key <tt>k</tt>.  (And recall from the beginning
+of these notes that the length of <tt>k</tt> will be
+<tt>log<sub>m</sub>N</tt>, where <tt>N</tt> is the
+number of objects that own keys, and <tt>m</tt> is the cardinality of
+the alphabet used to express the keys.  This ensures that the hash-table
+technique is at least as fast as the tree techniques we already know.)
+</ul>
+In summary,
+the code for <tt>h</tt> must be
+a fast ``numerical game'' for converting a key into an integer.
+
+<p>
+Perhaps <tt>h</tt> is written so that it mechanically converts
+a key, <tt>k</tt>, to an integer in the range, <tt>0.. N-1</tt>.
+There is one last question:
+<em>
+<dl><dd>
+How do we ensure that <tt>h</tt> maps each unique key to a unique hash code?
+</dl>
+</em>
+Well, given the previous requirements,
+we can't ensure this!  (Perhaps the table has size <tt>N</tt>
+but there are more than
+<tt>N</tt> distinct objects, each with its own distinct key!)
+The best we can do is write a hash function
+that <em>rarely</em> maps two distinct keys to the same integer, and
+then when this rare event happens (it is called a
+<em>collision</em>), we must have a procedure to deal with it.
+
+
+<h4>A small example</h4>
+
+Before we deal with the technical problems just mentioned, let's consider
+a simple example of a hash table and pretend that nothing goes wrong.
+Perhaps the table is this array, <tt>r</tt>:
+<pre>
+private int SOME_PRIME_NUMBER = 37;
+private Object[] r = new Object[SOME_PRIME_NUMBER];
+</pre>
+For reasons explained later, hash tables almost always contain a
+prime-number-quantity of element slots.
+
+<p>
+Say that keys are strings.  Perhaps we wish to insert object
+<tt>a1</tt> whose key is <tt>"abc"</tt>.  We use some hash function,
+<tt>h</tt>, to
+compute a hash code for <tt>"abc"</tt>, e.g.,
+<tt>h("abc") == 7</tt>.  So, we insert <tt>a1</tt> into  <tt>r[7]</tt>.
+
+<p>
+Similarly, perhaps <tt>a2</tt> has key <tt>"def"</tt>, and
+<tt>h("def") == 35</tt>.  After inserting it, the table looks like this:
+<pre>
+      0      1            7         35    36
+    ------------------------------------------
+   | null | null | ... | a1 | ... | a2 | null |
+    ------------------------------------------
+</pre>
+<em>Most of the space in the table is wasted</em>, but this is the price
+we pay for using a hash table.
+
+<p>
+Next, say that we wish to retrieve the value whose key is <tt>"def"</tt>;
+since <tt>h("def") == 35</tt>, we fetch the value at  <tt>r[35]</tt>.
+
+<p>
+Finally, say that we insert <tt>a3</tt> whose key is <tt>"ghi"</tt>,
+and by bad luck, <tt>h("ghi") == 7</tt>.  Now, what do we do?
+We address this momentarily.
+
+<h4>Hash functions</h4>
+
+A hash function must map a key to an integer in the range, 0..N-1.
+In the usual case, a <em>key</em> is a sequence, such as a sequence
+of letters and/or numerals.  The hash function must do a ``good''
+(but not perfect) job of mapping each unique sequence to a unique
+integer in 0..N-1.  (Can you understand why it is impossible, in general,
+for any hash function to do a perfect job of this?)
+
+<p>
+We assume that a key has the format:
+<pre>
+k == x<sub>0</sub> x<sub>1</sub> x<sub>2</sub> ... x<sub>m-1</sub> x<sub>m</sub>
+</pre>
+where each <tt>x<sub>j</sub></tt> is a symbol that has an numerical
+value.
+
+<p>
+To translate <tt>k</tt> into an integer in range 0..N-1, we take a two-step
+approach:
+<ol>
+<li>
+translate <tt>k</tt> into an almost unique integer <tt>i<sub>k</sub></tt>,
+which might well
+fall outside the range of  0..N-1
+<li>
+``compress'' <tt>i<sub>k</sub></tt> into 0..N-1 by
+<pre>
+hash_code = Math.abs( i<sub>k</sub> ) % N
+</pre>
+That is, take the absolute value and mod by the size of the array.
+</ol>
+
+<p>
+The usual technique for doing Step 1 is called
+<em>polynomial coding</em>:  Choose a <em>base</em> to be
+an positive int; call it
+<tt>a</tt>.  Next, compute this integer from the symbols
+in key <tt>k == 
+x<sub>0</sub>x<sub>1</sub>x<sub>2</sub>...x<sub>m-1</sub>x<sub>m</sub></tt>:
+<pre>
+i<sub>k</sub> ==  (x<sub>0</sub> * a<sup>m</sup>) + (x<sub>1</sub> * a<sup>m-1</sup>) + (x<sub>2</sub> * a<sup>m-2</sup>) + ... + (x<sub>m-1</sub>) * a  +  x<sub>m</sub>
+</pre>
+
+<p>
+To see this technique at work, let <tt>a</tt> be 100.
+Say that the key is <tt>"abc"</tt>.   Recall that, in Java, the characters
+<tt>'a'</tt>, <tt>'b'</tt>, <tt>'c'</tt> can be treated as integers,
+specifically,
+<pre>
+int a_code = (int)'a';
+</pre>
+assigns <tt>97</tt> to <tt>a_code</tt>.
+Hence,  <tt>"abc"</tt> can be read as the three-integer sequence,
+<tt>97 98 99</tt>.
+
+<p>
+Here is the polynomial code for <tt>"abc"</tt>:
+<pre>
+(97 * 100<sup>2</sup>) + (98 * 100) + 99  ==  979899
+</pre>
+At this point, we convert <tt>979899</tt> into its hash code by
+performing Step 2.  Say that <tt>N</tt> is 37:
+<pre>
+Math.abs(979899) % 37 == 28
+</pre>
+Hence, the object whose key is <tt>"abc"</tt> should be stored in
+element 28 of the hash table.
+
+<p>
+The compression step maps all polynomial codes into the range 0..36.
+Collisions are almost inevitable.  It is a deep result of number theory
+that modulo by prime numbers reduces the number of collisions.
+
+<p>
+For fun, calculate the polynomial code for <tt>"def"</tt>, that is, for
+<tt>100 101 102</tt>.  Then, calculate the hash code.
+
+<p>
+There is no reason why the base, <tt>a</tt>,
+must be 100 or 10 or whatever.
+Indeed, experimental evidence has shown that primes like 37 and 41 make
+good values for bases.  (Obviously, small nonprimes, like 2 and 4,
+make terrible bases for polynomial codings.)
+
+<p>
+Common sense tells us that, if a key is written with a character set
+of <tt>M</tt> characters, then setting <tt>a == M</tt> would map
+each key to a unique polynomial code.   But extensive analysis has
+shown that <tt>a</tt> can be a smaller value than <tt>M</tt>, e.g.,
+37 or 41. 
+The point is that we do not want to use a base
+that inadvertantly maps ``too many'' distinct
+keys into the same polynomial code --- e.g., <tt>a == 2</tt> does badly.
+Also, a long key can easily cause the polynomial coding calculation
+to overflow the standard integer fullword (which holds 32 bits),
+and we want the ``overflowed'' number to be nonetheless useful as a polynomial
+code.  Again, bases like 37 and 41 cope well with this situation.
+
+<p>
+But this is half of the story---since
+the polynomial code must be ``compressed'' into the range 0..N-1,
+there is the chance that the compression will cause distinct polynomial
+codes to ``collide'' into the same hash code.
+
+<p>
+Deep analysis as well as experimental evidence suggest that such collisions
+can be reduced when
+<ol>
+<li>
+N, the size of the hash table, is a prime.
+This is because modulo-by-N tends to deemphasize numerical ``repetitions''
+and ``patterns'' that can appear when distinct keys share common subphrases
+and when the polynomial coding introduces patterns due to its
+powers-of-<tt>a</tt> expansion. 
+<li>
+The size of the hash table, N, is not a multiple (or not almost a multiple)
+of <tt>a</tt>, the base used for the polynomial codings.   This reduces
+the chance of ``patterns'' in the polynomial codings are propagated
+by modulo-by-N.
+<!--
+<li>
+If the key is a binary value (rather than a sequence of symbols),
+then the hash-table size should not be close
+to a power of 2; if the key is a base-10 numerical value, the hash-table
+size should not be close to a power of 10.
+-->
+</ol>
+
+
+
+                
+<h4>Handling collisions: buckets and spillovers</h4>
+
+It is inevitable that two objects with distinct keys receive the
+same hash code from the hashing function.  Such a case is called a 
+<em>collision</em>.  Earlier in these notes, we saw an example of
+a collision, where the hash table looked like this:
+<pre>
+
+      0      1            7         35    36
+    ------------------------------------------
+   | null | null | ... | a1 | ... | a2 | null |
+    ------------------------------------------
+</pre>
+and we wished to insert object <tt>a3</tt> with key <tt>"ghi"</tt>,
+but <tt>h("ghi") == 7</tt>.
+
+<p>
+A good solution to the collision is to create a linked list at
+element 7; this is called a <em>bucket</em>:
+<pre>
+
+      0      1            7      
+    ------------------------------
+   | null | null | ... | * | ... 
+    ---------------------|--------
+                         v
+                        ---
+                       | a1 |
+                        ----
+                       | *  |
+                        -|--
+                         v
+                        ---
+                       | a3 |
+                        ----
+                       |null|
+                        ----
+</pre>
+
+<p>
+A second solution to a collision is to place <tt>a3</tt> in the first
+vacant element following element 7 (``wrapping around'' to element 0
+if the right suffix of the array is filled). 
+Here, since element 8 is empty,
+<tt>a3</tt> would be placed there:
+<pre>
+
+      0      1            7    8         35    36
+    -----------------------------------------------
+   | null | null | ... | a1 | a3 | ... | a2 | null |
+    -----------------------------------------------
+</pre>
+This is called <em>linear spillover</em>.
+
+<p>
+Both buckets and linear spillover mean that the retrieval operation
+must first compute a hash code and then start a linear search, starting
+from the array element named by the hash code.
+
+<p>
+Finally, another approach to collisions is <em>rehashing</em>---this
+is the computation of a second, different hash code when the first hash code
+caused a collision.  Rehashing will not be discussed here (partly because
+a recomputed hash code can generate a second collision, so then you
+must do re-rehashing, etc.), but you can
+consult a data structures text for this technique.
+
+<p>
+Hash tables are not well suited for deletions, and use of linear spillover
+makes deletions painful---use buckets if you expect to handle deletions
+also.
+
+
+
+<h4>When to use a hash table</h4>
+
+<p>
+As noted earlier, a hash table is attractive because it lets us
+work with a simple data structure---the array---while ensuring that
+insertion and lookup time is based on the length of keys.
+The major disadvantage to a hash table is that, once the table is
+almost or completely full, lookups and insertions slow dramatically,
+and ultimately, the table must be scrapped and rebuilt at a larger
+size.
+
+<p>
+Here are some guidelines for when to employ a hash table:
+<ol>
+<li>
+<em>When you insert and find objects with keys that are sequences of
+symbols:</em>  The sequences neatly map to hash codes by means of
+polynomial coding.
+<li>
+<em>When the approximate
+quantity of objects to be saved is known in advance:</em>
+If you know in advance that approximately <em>M</em> items will
+be inserted in the hash table, then you construct an array that holds
+at least <em>2M</em> elements.   (Experience has shown that a size
+of <em>2M</em> reduces collisions to a reasonable amount while not
+wasting too much space.)
+<li>
+<em>When there are few or no deletions to be done.</em>
+</ol>
+
+</body>

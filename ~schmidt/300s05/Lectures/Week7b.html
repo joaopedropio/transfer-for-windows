@@ -1,0 +1,599 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Tree data structures</h2>
+
+A <em>tree</em> data structure is a powerful tool for organizing
+data objects based on keys.  It is equally useful for organizing
+multiple data objects in terms of hierarchical relationships (think
+of a ``family tree'', where the children are grouped under their
+parents in the tree).
+
+<p>
+Trees are usually drawn pictorially like this (again, think of a
+``family tree''), where data can be placed where the asterisks appear:
+<pre>
+                          *
+                        /  \
+                       *    *
+                      / \  /|\
+                     *   ** * *
+                        /\  ...
+                       ...
+</pre>
+The asterisks represent <em>node</em>s; the node at
+the top is the <em>root</em>, the tree's ``starting point.''
+The arcs between nodes are called <em>branches</em>.
+A node that has no branches underneath it is called a <em>leaf</em>.
+Real trees grow from their root upwards to the sky, but computer-science
+trees grow from the root downwards.
+
+<p>
+Here is an example of a tree of species, from zoology:
+<pre>
+<img src="GrammarNotes/species.jpg">
+</pre>
+
+<p>
+When we examine a non-leaf node, we see that the node has trees growing
+underneath it, and we say that the node <em>has children subtrees</em>.
+For example, the root node, ``Animal'', has two children subtrees.
+
+<p>
+Tree structures make an excellent alternative to arrays,
+especially when the data stored within them is keyed or has internal
+structure that allows one element to be related to, or ``saved within''
+another.
+
+<h3>Applications of Trees</h3>
+
+<ol>
+<li>
+Trees can hold objects that are sorted by their keys.
+The nodes are ordered so that all keys in a node's left subtree
+are less than the key of the object at the node, and all 
+keys in a node's right subtree are greater than
+the key of the object at the node.
+Here is an example of a tree of records, where each record
+is stored with its integer key in a tree node:
+<pre>
+<img src="GrammarNotes/orderedtree.jpg">
+</pre>
+Here, the leaves are used as ``end points'' and hold nothing.
+
+<p>
+We call such a tree an <em>ordered tree</em> or a <em>search tree</em>.
+The tree drawn above is ordered on the integer keys saved in the nodes.
+
+<p>
+The advantages of ordered trees over sorted arrays are:
+<ul>
+<li>
+both insertions (and retrievals) of objects by key take on the average
+log<sub>2</sub>N time, where N is the number of objects stored.
+<li>
+the tree naturally grows to hold an arbitrary, unlimited number of
+objects.
+</ul>
+
+<li>
+Trees can hold objects that are located by keys that are sequences.
+For example, we might have some books with these Library of Congress
+catalog numbers:
+<pre>
+QA76  book1
+QA7   book2
+Q17   book3
+B1    book4
+Z4    book5
+</pre>
+The books's keys are sequences, and the sequences label the branches
+of a tree that holds the books:
+<pre>
+           *
+           |
+   +-------+----------+
+ B |     Q |        Z |
+   *       *          *
+ 1 |    1 /  \ A    4 |
+ book4   *    *     book5
+       7 |    | 7
+      book3  book2
+              | 6
+             book1
+</pre>
+Books can be stored at nodes or leaves, and not all nodes hold a book
+(e.g., <tt>Q1</tt>).
+This tree is called a <em>spelling tree</em>, and it has the advantage
+that the insertion and retrieval time of an object is related only
+to the length of the key.
+
+<li>
+A tree can represent a structured object, such as a house that must be
+explored by a robot or a human player in an adventure game:
+<pre>
+house's entrance----upper hallway----bedroom---closet---...
+ |                  |          |
+ |                  |          +-----private bath---...
+ |                  +---study---...
+ |
+ lower hallway---kitchen---...
+            |
+            +---lounge---...
+</pre>
+We might imagine a robot entering the house at its entrance, knowing
+nothing about what lies inside.  The robot's data base looks like this:
+<pre>
+house's entrance
+</pre>
+Perhaps the robot explores the upper hallway, bedroom, and private bath.
+Its data base expands with the knowledge learned during the exploration:
+<pre>
+house's entrance----upper hallway----bedroom---closet---...
+                               |
+                               +-----private bath---...
+</pre>
+As the robot explores more and more of the house, its database, a tree,
+grows to include the knowledge.  A tree structure is useful for
+holding the knowledge, because trees can grow dynamically, spawning
+branches and subtrees as needed.
+
+<p>
+A tree like the one above is sometimes called a <em>search tree</em>.
+Indeed, the search trees seen in the earlier lectures on stacks and
+queues also fit into this category.
+
+<li>
+Trees are used to represent phrase structure of sentences, which is
+crucial to language processing programs.  Here is the phrase-structure
+tree (``parse treee'') for the Java statements
+<pre>
+int x;
+x = 3 + y;
+
+</pre>
+<pre>
+              STATEMENT SEQUENCE
+             /                  \
+  DECLARATION              ASSIGNMENT
+   /       \                /      \
+TYPE  VARIABLE         VARIABLE    EXPRESSION
+ |       |                |       /     |   \
+int      x                x     NUMERAL + VARIABLE
+                                 |          |
+                                 3          y
+</pre>
+The Java compiler checks the grammatical structure of a Java program
+by reading the program's words and attempting to build the program's
+parse tree.  If successfully contructed, the parse tree is used as a guide
+to help the Java compiler generate the byte code that one finds in the
+program's  .class  file.  
+<li>
+An operating system maintains a disk's file system as a tree,
+where file folders act as tree nodes:
+<pre>
+<img src="OSNotes/tree.jpg">
+</pre>
+The tree structure is useful because it easily accommodates the creation
+and deletion of folders and files.
+</ol>
+
+The tree forms listed above have varying
+internal structure,
+but all are variations on the same basic idea --- an inductive
+definition, which we now study in its purest form.
+
+<h2>Binary Trees</h2>
+
+<p>
+We begin study with a form of tree whose nodes 
+have exactly two subtrees.  Here is the inductive
+definition:
+<dl>
+<dd>
+<em>
+A BinaryTree object is
+<ol>
+<li>
+A Leaf-structure, representing an empty tree;
+or
+<li>
+A Node-structure, which contains:
+<ul>
+<li>
+an object, called the ``value''
+<li>
+a BinaryTree object, called the ``left subtree'';
+<li>
+a BinaryTree object, called the ``right subtree'';
+</ul>
+</ol>
+</dl>
+</em>
+Here is a picture of a binary tree, where integers are saved
+as values at the nodes, and leaves hold no integers at all:
+<pre>
+<img src="GrammarNotes/inttree.jpg">
+<!--
+           +---- Node: 9 -- - +
+          /                  \
+    left /                    \ right
+       Node: 5                 Node: 12
+ left /       \ right    left /       \ right
+    Leaf     Leaf           Leaf    Node: 15
+                                   /        \ right
+                             left /          \
+                                 Leaf       Leaf
+-->
+</pre>
+Sometimes, the arcs that enamate from the nodes are labelled
+so that we can describe subtrees; here, each node possess a
+<em>left</em> subtree and a <em>right</em> subtre..
+
+<p>
+Since trees are inductively defined, the above tree can be drawn
+as a layered structure:
+<pre>
+  Node----------------------------------------------------------------+
+  |                           9                                       |
+  |     Node--------------+       Node------------------------------+ |
+  |     |         5       |       |         12                      | |
+  |     |    Leaf   Leaf  |       |    Leaf    Node---------------+ | |
+  |     +-----------------+       |            |         15       | | |
+  |                               |            |    Leaf    Leaf  | | |
+  |                               |            +------------------+ | |
+  |                               +---------------------------------+ |
+  +-------------------------------------------------------------------+
+</pre>
+Another representation of the above tree is
+<pre>
+Node( 9,  Node( 5, Leaf(), Leaf() )
+          Node( 12, Leaf(),
+                    Node( 15, Leaf(), Leaf() )
+              )
+    )
+</pre>
+This looks more like Java code, and it shows the nested structure of the
+tree.
+
+<h4>Processing a binary tree by recursion</h4>
+
+<p>
+There is a basic pattern for computing on binary trees; the pattern
+follows the inductive definition.  Here is what it looks like in
+equational form:
+<pre>
+process( Leaf ) = ...some simple answer...
+process( Node(val, left, right) ) = ...compute an answer from  val,  process(left), and process(right)...
+</pre>
+
+Here is an example, which counts the number of Node-objects within a
+binary tree:
+<pre>
+countNodes( Leaf ) = 0
+countNodes( Node(val, left, right) ) =  1 + countNodes(left) + countNodes(right)
+</pre>
+The intuition behind the schema is simple: To count all the nodes in
+a big tree, we split the task into pieces:  
+<ol>
+<li>
+count all the nodes in the slightly smaller, left subtree;
+<li>
+count all the nodes in the slightly smaller, right subtree;
+<li>
+add together these counts, plus one, for the root.
+</ol>
+Here is a picture of the <tt>countNodes</tt> schema:
+<pre>
+<img src="GrammarNotes/countNodes.jpg">
+</pre>
+You should apply the schema to the above example tree and calculate
+that it has four nodes.
+
+
+<h3>The classes for binary trees</h3>
+
+Here is the coding of the binary-tree data structure, based on the
+inductive definition seen earlier.  First, we use an abstract class
+to name the data type of binary tree:
+<pre>
+package BinTree;
+/** BinaryTree defines the data type of binary trees: 
+  *  (i) a leaf, or  
+  *  (ii) a node that holds a value, a left subtree, and a right subtree. 
+  * Methods listed below should be overridden as needed by subclasses. */
+public abstract class BinaryTree
+{ /** value returns the value held within a tree node
+    * @return the value  */ 
+  public Object value()
+  { throw new RuntimeException("BinaryTree error: no value"); }
+
+  /** left  returns the left subtree of this tree
+    * @return the left subtree  */
+  public BinaryTree left()
+  { throw new RuntimeException("BinaryTree error: no left subtree"); }
+
+  /** right  returns the right subtree of this tree
+    * @return the right subtree  */
+  public BinaryTree right()
+  { throw new RuntimeException("BinaryTree error: no right subtree"); }
+}
+</pre>
+First, here is the coding for leaf objects:
+<pre>
+package BinTree;
+/** Leaf models a tree leaf---an empty tree  */
+public class Leaf extends BinaryTree
+{ /** Constructor Leaf constructs the empty tree */
+  public Leaf() { }
+}
+</pre>
+Next, we write the coding for constructing node objects:
+<pre>
+package BinTree;
+/** Node models a nonempty tree node, holding a value and two subtrees  */
+public class Node extends BinaryTree
+{ private Object val;
+  private BinaryTree left;
+  private BinaryTree right;
+
+  /** Constructor Node constructs the tree node
+    * @param v - the value held in the node
+    * @param l - the left subtree
+    * @param r - the right subtree  */
+  public Node(Object v, BinaryTree l, BinaryTree r)
+  { val = v;
+    left = l;
+    right = r;
+  }
+
+  public Object value()
+  { return val; }
+
+  public BinaryTree left()
+  { return left; }
+
+  public BinaryTree right()
+  { return right; }
+
+}
+</pre>
+Notice that we have <em>not</em>
+supplied methods to modify a tree structure
+after the tree is first constructed.  Surprisingly, these are not crucial ---
+we can always build new trees from scratch, as we will see.  (These issues
+are addressed a bit later in this lecture.)
+
+<p>
+Here is the Java coding of the <tt>countNodes</tt> function, which
+was developed in the previous subsection:
+<pre>
+  /** countNodes returns the number of Node-objects within a tree
+    * @param t - the tree analyzed
+    * @return the number of Nodes within  t  */
+  public int countNodes(BinaryTree t)
+  { int answer;
+    if ( t instanceof Leaf )
+         { answer = 0; }
+    else // t must be a Node:
+         { int left_answer = countNodes(t.left());
+           int right_answer = countNodes(t.right());
+           answer = 1 + left_answer + right_answer;
+         }
+    return answer;
+  }
+</pre>
+<p>
+You can find the classes for building binary trees here:
+<h4>
+<a href="BinTreeEx.html">Definition of BinaryTree data type and applications
+that use it </a>
+</h4>
+In the directory,
+look at the <tt>BinTree</tt> directory for the basic classes that
+define binary trees.  The <tt>Test.java</tt> application shows
+how to build some trees and use them as arguments to methods.
+The <tt>TreeCalculator.java</tt> class
+contains codings of methods that count and print trees.
+
+
+<h3>Printing a tree's contents: in-order, pre-order, and post-order</h3>
+
+<p>
+We might wish to print the contents of a tree's nodes:
+<pre>
+printNodes( Leaf ) =  nothing to print
+
+printNodes( Node(value, left, right) ) =  printNodes(left);
+                                          print the value;
+                                          printNodes(right);
+</pre>
+The printing proceeds by printing the left subtree in its entirety,
+followed by the value at the root, followed by the right subtree.
+This is called an <em>in-order</em> tree traversal.
+In Java,
+<pre>
+  /** printInOrder prints all the values held within a binary tree;
+    *  the tree is traversed left-to-right _in-order_ (value printed in middle)
+    * @param t - the tree traversed and printed  */
+  public void printInOrder(BinaryTree t)
+  { if ( t instanceof Leaf )
+         { }  // no value to print
+    else // t must be a Node:
+         { printInOrder(t.left());   // print nodes in left subtree
+           System.out.println( (t.value()).toString() );  // print node's value
+           printInOrder(t.right());  // print nodes in right subtree
+         }
+  }
+</pre>
+
+<p>
+For example, the tree seen earlier would print like this:
+<pre>
+5
+9
+12
+15
+</pre>
+
+<p>
+Here is a variation on the printing:
+<pre>
+print2( Leaf ) =  nothing to print
+
+print2( Node(value, left, right) ) = print the value;
+                                     print2(left);
+                                     print2(right);
+</pre>
+This is called a <em>pre-order</em> traversal and would generate
+<pre>
+9
+5
+12
+15
+</pre>
+for the example tree.
+
+<p>
+There is a third variation, post-order traversal, which prints a
+node's value after the contents of the left and right subtrees are printed.
+You should formulate the algorithm for post-order traversal.
+
+<h3>Modifying a tree---building a new tree in terms of an existing one</h3>
+
+Of course, it is always easy to build a new tree using smaller trees
+that we have already constructed.  For example,
+say that we have this tree:
+<pre>
+BinaryTree right_subtree = new Node("c", new Leaf(), new Leaf());
+</pre>
+It is easy to use <tt>right_subtree</tt> to build a larger tree:
+<pre>
+BinaryTree t = new Node("a", new Leaf(), right_subtree);
+</pre>
+Tree <tt>t</tt> holds <tt>right_subtree</tt> as its right subtree.
+
+<p>
+But the situation get more interesting if we wish to add new ``growth''
+in place of one of the leaves already embedded within tree <tt>t</tt>
+For example,
+say that we wish to revise tree <tt>t</tt> so that its left
+subtree, a leaf, is replaced by a node that holds <tt>"b"</tt>.
+
+<h4>First approach: mutable trees</h4>
+
+<p>
+It is tempting to wish for
+a method, say, <tt>setLeft</tt>, so that we might just say:
+<pre>
+BinaryTree new_left_subtree = new Node("b", new Leaf(), new Leaf());
+t.setLeft(new_left_subtree);
+</pre>
+
+<p>
+Of course, we can indeed write a <tt>setLeft</tt> method
+(and for that matter, a <tt>setRight</tt> method) and add them to
+<tt>class Node</tt>:
+<pre>
+public class Node extends BinaryTree
+{ private Object val;
+  private BinaryTree left;
+  private BinaryTree right;
+    ...
+
+  public void setLeft(BinaryTree new_left)
+  { left = new_left; }
+
+  public void setRight(BinaryTree new_right)
+  { right = new_right; }
+}
+</pre>
+But before we seize on this approach exclusively, we should consider
+another, clever way of replacing a subpart of an existing tree.
+
+<h4>Second approach: immutable trees</h4>
+
+<p>
+Once again, here is tree <tt>t</tt>:
+<pre>
+BinaryTree right_subtree = new Node("c", new Leaf(), new Leaf());
+BinaryTree t = new Node("a", new Leaf(), right_subtree);
+</pre>
+Now, we build the <tt>new_left_subtree</tt>, just like before:
+<pre>
+BinaryTree new_left_subtree = new Node("b", new Leaf(), new Leaf());
+</pre>
+Now we wish to alter <tt>t</tt> so that its left leaf is replaced by
+<tt>new_left_subtree</tt>.
+But we do <tt>not</tt> use <tt>setLeft</tt> to alter <tt>t</tt>.
+Instead, we <em>rebuild the parts of <tt>t</tt> that rest above
+the <tt>new_left_subtree</tt></em> and reuse the other parts:
+<pre>
+t = new Node(t.value(), new_left_subtree, t.right());
+</pre>
+This assignment statement assigns a new tree to variable
+<tt>t</tt> --- the tree's root value is exactly the root value
+that <tt>t</tt> previously held.  Also, the tree's right subtree
+is exactly the same subtree that <tt>t</tt> previously held.
+<em>But <tt>t</tt>'s old left subtree, the leaf, is forgotten
+and <tt>new_left_subtree</tt> is used instead.</em>
+
+<p>
+There is no need for a <tt>setLeft</tt> method --- we build a new tree
+instead.
+
+<h4>Comparison</h4>
+
+<p>
+The first approach, which used a <tt>setLeft</tt> method,
+employs <em>mutable trees</em>; the second method, which rebuilds the parts
+of the tree that rest above the altered part,
+uses
+<em>immutable trees</em>.
+
+<p>
+What are the comparative aspects of the two approaches?
+For mutable trees:
+<ul>
+<li>
+The program maintains only one (big) tree, because the
+mutation operations, <tt>setLeft</tt> and <tt>setRight</tt>,
+change links in the heap.
+<li>
+For some activities, e.g., tree balancing (where a new root node must
+be installed), the mutations can be done quickly with programming
+``tricks'' that cleverly reset a few links.
+</ul>
+
+<p>
+Here are the important aspects of immutable trees:
+<ul>
+<li>
+A program can 
+maintain multiple trees, <em>and the trees can share each other's
+substructures.</em>
+(This happens in text editing programs and other interactive programs:
+the state of the edited document is stored internally as a tree, and when you
+make a modification, a new tree is built that shares almost all of the
+old tree but also contains the modification you made.   If you press
+the ``undo'' button to undo the modification,
+the ``current'' tree is forgotten and the
+``earlier'' tree is used instead.   The ability to repeatedly
+undo is made possible by multiple trees that share huge parts of
+each other.)
+<li>
+In Java, there is no penalty to constantly
+building new trees from pieces of other trees --- the Java garbage
+collector reclaims those pieces of trees that are discarded and are
+unreferenced by the program.
+</ul>
+We will study how to build both mutable and immutable trees.
+
+<!--
+<p>
+The next lecture shows how to work with immutable trees, and the lecture
+after that handles mutable trees.  Both techniques are worth
+learning.
+-->
+
+</body>

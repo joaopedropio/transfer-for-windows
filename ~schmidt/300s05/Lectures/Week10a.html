@@ -1,0 +1,202 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Spelling Trees</h2>
+
+Some people call
+a data structure a
+<em>dictionary</em>
+if it is a collection of ``words,'' and it has methods for inserting and
+finding specific words in the collection.
+
+<p>
+If a ``word'' is a sequence of characters, or in general, a sequence (or list)
+whose elements can be ordered, then
+there is a clever implementation of a dictionary as a so-called
+<em>spelling tree</em>
+or <em>trie</em> (pronounced ``try'').
+For example, say that we have some objects, 
+<tt>o1, o2, o3, o4,</tt> and <tt>o5</tt>, and say that the respective
+keys of these objects are the
+the words, <em>be, bed, bee, been,</em> and <em>it</em>.
+We can organize the objects so that each key defines a path
+from the root of the tree to the node that holds the object:
+<pre>
+               null
+           b/       \i
+          null      null
+          e|         |t
+          o1        o5
+        d/ e\  
+        o2  o3 
+             |n
+            o4
+</pre>
+For example, object <tt>o1</tt>, whose key is <tt>be</tt>,
+is found by traversing the path
+labelled <tt>b</tt> followed by <tt>e</tt>.
+Notice that object <tt>o2</tt>, whose key is <tt>bed</tt>,
+is located by following the path labelled
+<tt>b</tt> then <tt>e</tt>, then <tt>d</tt>.
+
+<p>
+For completeness sake, some paths lead to nodes where there are no values;
+such nodes hold ``null''.  For example, the key, <tt>i</tt>, leads to a
+node that holds null.
+Notice that the ``leaves'' in the drawing are nodes that do not
+hold (links to) more nodes. 
+
+<p>
+The labels on the branches replace the usual labels (fields)
+named ``left'' and ``right,'' and a Node may have some nonnegative
+quantity of subtrees.  For this
+reason, a spelling tree is an example of an ``n-ary'' tree, where
+the value of <em>n</em> is a nonnegative number.
+(Of course, a binary tree is a 2-ary tree.)
+
+<p>
+Note that
+<ul>
+<li>
+Insertions take time that is linear in the length of the key,
+and there is no limit to the quantity of keyed objects that
+can be inserted.  
+
+<p>
+<li>
+Assuming that each object that might ever be
+stored in the tree has a unique key, and assuming that the symbols in
+the keys are chosen from an alphabet of size <tt>M</tt>, and assuming
+that there are <tt>N</tt> such objects with unique keys, then we
+note that the longest path in a spelling tree is equal to the longest
+key, which has length <tt>log<sub>M</sub>(N)</tt>.
+
+<p>
+This implies that insertions and lookups in a spelling tree take time
+on the order of <tt>log<sub>M</sub>(N)</tt>, which is roughly equivalent
+to the time taken to do insertions in lookups in a binary tree,
+where <tt>M = 2</tt>.   (For some intuition, calculate the values of
+<tt>log<sub>M</sub>(N)</tt>, for these ranges of <tt>M</tt> and <tt>N</tt>:
+<br>
+<tt>M = 2 or 10</tt>;
+<tt>N = 32 or 100 or 1000 or 10000</tt>.)
+</ul>
+
+<p>
+In practice, spelling trees are often preferred over binary trees to store
+keyed objects, because it is easy to work directly with the symbols within
+the keys.  But we will see that the implementation becomes slightly more
+complicated.
+
+<h4>Designing Spelling Trees</h4>
+
+To make the previous drawing of a spelling tree come to life, we
+use a fixed
+<em>alphabet</em> for the keys (e.g., the characters <tt>'a'</tt> through
+<tt>'z'</tt>).  
+Then, the inductive data type definition for a spelling tree might be
+written like this:
+<em>
+<dl>
+<dd>
+A SpellingTree object is
+<ol>
+<li>
+A Node object, which contains
+<ul>
+<li>
+a Value
+<li>
+a set of SpellingTree objects (which might be empty),
+where each spelling-tree object is labelled by a symbol of the alphabet.
+</ul>
+</ol>
+</dd>
+</dl>
+
+<p>
+<dl>
+<dd>
+A Value is either:
+<ol>
+<li>an object, called the ``value'', or
+<li>empty (also known as ``null'')
+</ol>
+</dl>
+</em>
+That is, a spelling tree is a node that holds/links to other
+spelling trees.
+
+<p>
+The above inductive definition is not the only way to define the data type
+of spelling trees.
+
+<h4>Implementing Spelling Trees</h4>
+
+The inductive definition gives us a strong hint how to build a
+spelling tree:  <tt>class Node</tt> would hold (the addresses of)
+a set of spelling trees, plus a ``value'' (which is an object or <tt>null</tt>).
+
+<p>
+There are many ways to model sets, but since the set of spelling trees
+are indexed by letters of the alphabet, an array implementation works
+well.
+For the example tree above, the root Node object
+might look like this in heap storage:
+<pre>
+   a1 : Node
+   ---------------------------------
+   |  value ==| null |
+   |           ------
+   |             'a'  'b'  'c'  ...   'i'  ...   'z' 
+   |            ------------------------------------
+   |  subtree: |null| a2 |null| ... | a3 | ... |null|
+   |            ------------------------------------
+   |
+</pre>
+<tt>subtree</tt> is an array whose indexes are the letters of the
+alphabet used to form keys.  (Unfortunately, Java does not allow
+letters to be array indices, so you must do a conversion when you code
+the array.)
+Since the root has one subtree indexed by <tt>'b'</tt> and one
+subtree indexed by <tt>'i'</tt>, there are nonnull addresses to the
+Node objects for these two subtrees. 
+
+<p>
+Next, the node indexed by <tt>'b'</tt> looks like this:
+<pre>
+   a2 : Node
+   ---------------------------------
+   |  value ==| null |
+   |           ------
+   |             'a'  'b'  'c'  'd'   'e'  ...   'z' 
+   |            ------------------------------------
+   |  subtree: |null|null|null| null | a4 | ... |null|
+   |            ------------------------------------
+   |
+</pre>
+and its subtree indexed by <tt>'e'</tt> looks like this:
+<pre>
+   a4 : Node
+   ---------------------------------
+   |  value ==| o1 |
+   |           ------
+   |             'a'  'b'  'c'  'd'  'e'  ...   'z' 
+   |            ------------------------------------
+   |  subtree: |null|null|null| a5 | a6 | ... |null|
+   |            ------------------------------------
+   |
+</pre>
+
+<p>
+The main advantage of using an array to label the subtrees is that
+key processing is fast (because array lookup is fast).
+The main disadvantage is that a huge alphabet requires huge arrays
+within each node---this is a major loss if the array holds mostly
+null addresses.
+
+<p>
+When the alphabet is huge or not fixed, a linked list can be used
+to save the subtrees for a given Node (but this can make key lookup
+much slower). 
+</body>

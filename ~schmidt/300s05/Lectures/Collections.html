@@ -1,0 +1,250 @@
+
+<body>
+
+<h1>The <tt>Java Collections</tt> components</h1>
+
+Many of the data structures we studied are already coded for
+you in the Java libraries, within the package, <tt>java.util</tt>.
+Here is a brief summary.
+
+<h2>Stacks and Vectors</h2>
+
+Two classes belong to the earliest version of <tt>java.util</tt>:
+<ul>
+<li>
+<tt>class Stack</tt>:  This is an array-based implementation of
+a stack, with the standard push, pop, and top (called <tt>peek</tt>)
+operations.
+<p>
+<li>
+<tt>class Vector</tt>: This is an array that can grow as needed.
+You can insert an object into a Vector by adding
+it to the end of the array: <tt>addElement(Object e)</tt> (and the
+array grows by one cell).
+Or, you can use an integer index like
+with the standard array: <tt>add(int index, Object e)</tt> (This operation
+will shift the elements of higher index to the right by one cell, and
+the array grows by one.)
+
+<p>
+Lookups can be done with an index: <tt>get(int index)</tt>;
+or, you can extract elements from either end of the array without
+giving an index number.   Because the insertion operation does not
+overwrite a cell in the Vector, there is an explicit <tt>remove</tt>
+operation for deleting a value from a Vector.
+</ul>
+
+<h2>The ``Collections Framework''</h2>
+Within <tt>java.util</tt> is a 
+a family of data structures that
+share standard operations and properties; they are called
+the ``collections framework.''  The framework is ``defined''
+by several
+Java interfaces that state some standard operations that
+classes in the framework must implement.
+
+<p>
+Here are the two most important interfaces:
+<ul>
+<li>
+<tt>interface Collection</tt>:  The interface states the standard
+operations that one would expect of a data structure (a ``collection''):
+insertion, lookup, deletion.  Here are the Java names:
+<dl>
+<dd>
+<tt>public boolean add(Object o)</tt>
+<dd>
+<tt>public boolean contains(Object o)</tt>  (This is a kind of lookup.)
+<dd>
+<tt>public boolean remove(Object o)</tt>
+<dd>
+<tt>public boolean isEmpty()</tt>
+<dd>
+<tt>public Iterator iterator()</tt> (This will be explained later.)
+</dl>
+
+<li>
+<tt>interface Map </tt>: The operations use keys to do insertions, etc:
+<dl>
+<dd>
+<tt>public boolean put(Object key, Object o)</tt>
+<dd>
+<tt>public Object get(Object key)</tt>
+<dd>
+<tt>public boolean remove(Object key)</tt>
+<dd>
+<tt>public boolean isEmpty()</tt>
+<dd>
+<tt>public Iterator iterator()</tt> 
+</dl>
+</ul>
+Here are two interfaces that add more operations to <tt>Collection</tt>:
+<ul>
+<li>
+<tt>interface List extends Collection</tt>, which gives you operations
+to add and look up objects using array-indexes.  (This means the data
+structure is a kind of array or numbered sequence --- it's too bad
+that they call it a ''list'' !)
+<li>
+<tt>interface Set extends Collection</tt>.  This interface requires
+that there are no duplicate objects in a collection --- like a set.
+It includes operations for set-like operations like union, intersection,
+and set subtraction.
+</ul>
+
+
+<h2>Classes that implement <tt>interface List</tt></h2>
+
+There are two important classes that implement <tt>interface List</tt>,
+that is, are numbered sequences:
+
+<ul>
+<li>
+<tt>class ArrayList</tt>:  This is really just a Java <tt>Vector</tt>,
+that is, an array that grows as needed, recoded to fit into the
+<tt>Collections</tt> package.
+<li>
+<tt>class LinkedList</tt>:  This is just a singly-linked list,
+extended with operations that let you find Cell number <tt>k</tt>
+in the list and return the object held in it.  (Also, you can insert
+a new object into the middle of the linked list by adding it
+at position <tt>k</tt>.)
+</ul>
+
+<p>
+You should use these two classes to build other data structures
+that must be ``smart'' arrays or ``smart'' linked lists.  For example,
+you might build a <tt>class Queue</tt> like this:
+<pre>
+import java.util.*;
+public class Queue
+{ private LinkedList my_queue;
+
+  public Queue()
+  { my_queue = new LinkedList(); }
+
+  public enqueue(Object ob)
+  { my_queue.add(ob); }  // adds ob to the end of the linked list
+
+  public Object dequeue()
+  { Object answer = null;
+    if ( !my_queue.isEmpty() )
+       { answer = my_queue.remove(0); } // remove the front object in the list
+    return answer;
+  }
+    ...
+}
+</pre>
+	  
+
+<h2>Classes that implement <tt>interface Map</tt></h2>
+
+These classes store ``Records'' --- objects paired with their keys:
+
+<ul>
+<li>
+<tt>class TreeMap implements Map</tt>:
+This is an ordered binary tree (a binary search tree) that uses the keys
+to store the objects.  The tree is balanced using a ``red node-black node''
+balancing strategy, which a bit more complicated than the AVL-balancing
+strategy but uses similar ideas.
+<li>
+<tt>class HashMap implements Map</tt>:
+This is a classical hash table, where you must state the size of the
+hash table when you construct a <tt>HashMap</tt> object.
+When a key,object pair are inserted, the key is converted into a
+hash code using polynomial coding with base 31.  Collisions are resolved
+using linked-list chains (``buckets'') within the array elements.
+</ul>
+
+<h2>Classes that implement <tt>interface Set</tt></h2>
+
+Interface Set is supposed to describe data structures that implement
+sets, having operations for set membership, union, and intersection.
+The Java language does not do well at providing set data structures,
+so instead we are asked to choose between a tree-simulation of a set
+and a hash-table simulation of a set.  Neither solution is ideal.
+<ul>
+<li>
+<tt>class TreeSet implements Set</tt>: It's a binary tree that does
+not use any keys to save its objects.  (Instead, the object's value
+is used as a ``key'' for storing the object in the tree.)
+<li>
+<tt>class HashSet implements Set</tt>: This is a hash table, where
+hash codes are manufactured from
+the object's value. 
+</ul>
+Indeed, both TreeSets and HashSets are really just TreeMaps and HashMaps
+that manufacture their own keys for the objects that are inserted.
+
+
+<h2>Iterators</h2>
+
+One standard sticky problem with data structures is printing the structure's
+contents in a simple way --- for example, we might copy the
+objects within a binary tree or a hash table into an array
+and return the array for printing.
+
+<p>
+An <em>iterator</em> is an ordered ``array'' of the contents
+of a data structure.  There is a Java interface, <tt>interface Iterator</tt>.
+An iterator has at least these two methods:
+
+<ul>
+<li>
+<tt>public Object next()</tt>:  shows us one of the objects in the
+data structure that we have not yet seen
+<li>
+<tt>public boolean hasNext()</tt>: tells us if there are more objects
+to look at
+</ul>
+To understand these operations, let's compare them to an array.
+
+<p>
+Say that we copied the objects held in a tree into an array named
+<tt>iter</tt>.  Then we write this loop to print the contents:
+<pre>
+Object[] iter =  ... copy contents of tree into array ...
+
+for ( int i = 0;  i != iter.length;  i = i + 1 )
+    { Object next_object = iter[i];
+      System.out.println( next_object.toString() );
+        // remember that  toString  is a Java method that tries to convert
+	// an object into a string for printing.  It often works!
+    }
+</pre>
+
+You do the same work with an iterator:  Say that you
+built a data structure, <tt>my_data_structure</tt>,
+with one of the Java Collections classes
+listed above.  Next, you added some objects into the structure,
+and now you want to print the contents:
+<pre>
+Iterator iter = my_data_structure.iterator();  // copies the objects in
+                    // my data structure into an ``array'' named  iter
+while ( iter.hasNext() )  // are there more objects to look at ?
+      { Object next_object = iter.next();   // get the next object
+        System.out.println( next_object.toString() );
+      }
+</pre>
+The iterator structure hides the details about whether an array
+or a linked list or whatever is the best structure for returning
+the contents of a data structure for printing.
+
+<h2>Summary</h2>
+Now that you understand and know how to program
+linked lists, ordered trees, and hash tables, you can 
+intelligently use the classes in the Java Collections package
+and save time when you are next asked to build a ``smart''
+data structure.
+
+<p>
+You can read the local documentation for <tt>java.util</tt>
+at
+<dl>
+<dd>
+<a href="http://www.cis.ksu.edu/VirtualHelp/Info/JDK1.3.1/docs/api/java/util/package-summary.html">
+<tt>http://www.cis.ksu.edu/VirtualHelp/Info/JDK1.3.1/docs/api/java/util/package-summary.html</tt></a>
+</dl>
+Or, visit Sun's web site, <tt>java.sun.com</tt>, for the latest writeup.
+</body>

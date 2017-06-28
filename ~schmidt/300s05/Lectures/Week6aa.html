@@ -1,0 +1,826 @@
+
+<body bgcolor="#FFFFFF">
+
+<h2>Inductively defined data structures</h2>
+   
+Roughly stated, there are three species of data structures in the
+computing world:
+<ul>
+<li>
+<em>tabular data structures</em>, like arrays and tables and grids.
+The objects held within an
+tabular data structure
+are equally visible and accessible, e.g.,
+<pre>
+Array-------------------+
+| "a" | "b" | "c" | "d" |
++-----------------------+
+</pre>
+all four objects live at the same ``level.''
+A loop is used to systematically process the contents of the structure,
+examining Cell 0, Cell 1, Cell 2, etc.
+<p>
+<li>
+<em>linked data structures</em>, like singly and doubly linked lists,
+graphs, and networks.
+Individual objects are held in small ``containers'' or ``cells'' that
+are linked together.   Extra variables are used to remember entry
+points into the linked structure, e.g.,
+<pre>
+
+front    Cell--+---+    Cell--+---+    Cell--+------+   rear
+| o-|--> | "a" | o-|--> | "b" | o-|--> | "c" | null |<--|-o |
++---+    +-----+---+    +-----+---+    +-----+------+   +---+
+</pre>
+A loop is used to traverse the cells of the list,
+starting from the entry point and following the links embedded in
+the cells of the list.
+<p>
+<li>
+<em>layered (or recursive) data structures</em>, like lists and trees and
+file (folder) systems.
+The objects held within
+a layered data structure are organized into ``levels''
+or ``layers'' such that access to an object must be done by entering
+the structure's levels one at a time until the level is reached where the
+desired object resides:
+<pre>
+Cell-----------------------+
+|     "a"                  |
+|     Cell--------------+  |
+|     |    "b"          |  |
+|     |    Cell-------+ |  |
+|     |    |    "c"   | |  |
+|     |    |    null  | |  |
+|     |    +----------+ |  |
+|     +-----------------+  |
++--------------------------+
+</pre>
+A recursively defined method is used to
+systematically process the contents of the structure.
+
+<p>
+When a recursive data structure is designed so that each of its
+levels contains levels of only simpler complexity, then we say
+that the structure is an <em>inductive data structure</em>.
+(An example of a layered data structure that is not inductive is a list
+of infinite length.)  In this course, we work only with
+inductive data structures.
+</ul>
+The above three classifications are <em>conceptual</em>; how we
+code these ideas into Java or Prolog or C is our decision.
+(For example, we might implement a layered data structure using
+links!)
+
+<p>
+Although it may seem initially awkward to organize objects into levels,
+the technique is valuable in practice, because it readily
+supports structures that can organically ``grow'' while a program
+executes.
+
+
+<h3>How to define an inductive data structure</h3>
+
+<p>
+We used <tt>class Cell</tt> to <em>implement</em> a data type
+of lists.  It is time to define precisely what a list <em>is</em>.
+The classic name is a <em>cons list</em> (or conslist),
+and we describe it precisely by means of a set of definitional clauses:
+
+<dl>
+<dd>
+An object is a <tt>Conslist</tt>-object if
+<ul>
+<li>
+it is a structure, <tt>Nil</tt>; or
+<li>
+it is a structure, <tt>Cons(h, t)</tt>, where <tt>h</tt> is an
+<tt>Object</tt> and <tt>t</tt> is
+another <tt>Conslist</tt>-object.
+</ul>
+</dl>
+(The terms, <tt>Cons</tt> and <tt>Nil</tt> --- rather than
+<tt>Cell</tt> and <tt>null</tt> --- are the traditional ones.)
+This form of definition is called an <em>inductive definition</em>,
+because we can use it to describe and generate finite-level
+Conslist objects. 
+
+<p>
+If you wish, you can ``draw'' the inductive definition
+<dl>
+<dd>
+An object is a <tt>Conslist</tt>-object if
+<ul>
+<li>
+it is a structure,
+<pre>
+Nil
+</pre>
+<li>
+or,
+it is a <tt>Cons</tt>- structure,
+<pre>
+Cons-----------------+
+|  h: Object         |
+|  t: +-Conslist-+   |
+|     |  ...     |   |
+|     +----------+   |
++--------------------+
+</pre>
+</ul>
+</dl>
+
+For example,
+<pre>
+Cons-----------------------+
+|  h: "a"                  |
+|  t: Cons--------------+  |
+|     | h: "b"          |  |
+|     | t: Cons-------+ |  |
+|     |    | h: "c"   | |  |
+|     |    | t: Nil   | |  |
+|     |    +----------+ |  |
+|     +-----------------+  |
++--------------------------+
+</pre>
+is a picture of a Conslist that holds three string objects,
+<tt>"a"</tt>, <tt>"b"</tt>, and <tt>"c"</tt>, within three levels
+of nested structure. 
+
+<p>
+Since the pictures quickly get huge, we will often use
+the linear forms, e.g.,
+<pre>
+Cons("a", Cons("b", Cons("c", Nil) ) )
+</pre>
+to indicate the list's nested structure.
+
+<p>
+The correctness of the structure's construction is
+is formally justified as follows:
+<ol>
+<li>
+By Clause 2, <tt>Nil</tt> is a Conslist object;
+<li>
+Since <tt>Nil</tt> is a conslist object and <tt>"c"</tt> is a (string)
+object, then by Clause 1, 
+<tt>Cons("c", Nil)</tt> is a conslist object;
+<li>
+Since <tt>Cons("c", Nil)</tt> is a Conslist object and
+<tt>"b"</tt> is an object, then by Clause 1,
+<tt>Cons("b", Cons("c", Nil))</tt> is a Conslist object;
+<li>
+By similar justification,
+<tt>Cons("a", Cons("b", Cons("c", Nil)))</tt> is a Conslist object.
+</ol>
+
+<p>
+Now, data-structure building is a kind of physical ``game'', where we
+start with some basic piece, e.g., <tt>Nil</tt>, and we place it along
+with an object, like <tt>"c"</tt>, in a box --- a <tt>Cons</tt> box.
+We then place the <tt>Cons</tt> box plus another object, say
+<tt>"b"</tt>, into another <tt>Cons</tt> box.  And so on.
+This is how we build Conslists.
+
+<p>
+Later, when we want to retrieve the string objects we ``packed''
+into the Conslist, we will have to ``open'' the
+<tt>Cons</tt> boxes, one level at a time. 
+
+<!--
+<p>
+We informally use a linear notation, e.g.,
+<tt>Cons("a", Cons("b", Cons("c", Nil)))</tt> to represent the
+layered structure of a Conslist.  We will freely move between the graphical
+and linear notation.
+-->
+
+
+<h3>How we have implemented Conslists in Java</h3>
+
+<p>
+Given the inductive definition of conslist, we must use Java
+programming phrases to mimick the definition.  Here is the way we
+were doing it, without even knowing that we were doing it:
+<ul>
+<li>the <tt>Nil</tt> object is coded as <tt>null</tt>
+<li>the <tt>Cons(h, t)</tt> object is coded as
+<tt>new Cell(h, t)</tt>, using <tt>class Cell</tt>.
+</ul>
+Hence, the conslist drawn above is written this tersely in Java:
+<pre>
+new Cell("a", new Cell("b", new Cell("c", null)))
+</pre>
+Of course, we can assemble this 3-level structure in increments, if we
+desire:
+<pre>
+Cell x = new Cell("c", null);
+Cell y = new Cell("b", x);
+Cell z = new Cell("a", y);
+</pre>
+
+<!--
+<p>
+In some ways, it is a bit barbaric to use <tt>null</tt>, the
+``no value'' noun in Java, to denote a 0-level structural value.
+While we are at it, we might wish to change from <tt>class Cell</tt> to
+<tt>class Cons</tt>.  We will do exactly this a bit later; for now,
+we will use what we already know.
+-->
+
+
+<h3>How to program operations on conslists</h3>
+
+<p>
+When a data type is defined with an inductive definition, 
+<em>computation on elements of the data type is also defined
+inductively (recursively)</em>,
+and this is implemented by means of a recursively
+defined method. 
+
+<p>
+The idea goes as follows:  Since there are two forms of Conslists,
+then we should have two recipes for processing a Conslist---one for
+the <tt>Nil</tt>-structure and one for the <tt>Cons</tt>-structure.
+We might write each ``recipe'' as an equation, from algebra, like this:
+<pre>
+process( Nil ) =  return ...some simple answer...
+
+process( Cons(h, t) ) =  ... use recursion to compute  t_answer = process(t);
+                         return ...an answer built from  h  and  t_answer...
+</pre>
+Here is the <tt>lengthOf</tt> example specified in equational style:
+<pre>
+/** length of  a ConsList:  */
+lengthOf( Nil ) = 0
+lengthOf( Cons(h, t) ) =  1 + lengthOf(t)
+</pre>
+This set of equations, <em>one per clause in the inductive definition</em>,
+describes the computational steps needed to descend into the levels
+of a conslist object so that we can compute its length (or, if you will,
+its <em>depth</em>).
+
+<p>
+The above schema is mechanically reformatted into
+a Java method when we use <tt>null</tt> and
+<tt>class Cell</tt> to implement a conslist:
+<pre>
+public int lengthOf(Cell l)
+{ int length;
+  if ( l == null )
+       { length = 0; }
+  else { length = 1 + lengthOf(l.getNext()); }
+  return length;
+}
+</pre>
+Indeed, for inductively defined data structures, the equational-schema
+format gives us a fool-proof algorithm for processing the data structures!
+
+<h3>How the recursions execute on the Conslists</h3>
+
+Let's do some algebra with the equational formulation of <tt>lengthOf</tt> to
+count the length (depth) of the conslist,
+<tt>Cons("a", Cons("b", Cons("c", Nil)))</tt>.  Here is the definition,
+again:
+<pre>
+lengthOf(Nil) = 0
+lengthOf( Cons(h, t) ) =  1 + lengthOf(t)
+</pre>
+and here is the calculation, like one would do in algebra class:
+<pre>
+lengthOf( Cons("a", Cons("b", Cons("c", Nil))) )
+
+       because the argument has form,  Cons(...,...),
+         use the second equation:
+
+= 1 + lengthOf( Cons("b", Cons("c", Nil)) )
+
+       again, use the second equation:
+
+= 1 + 1 + lengthOf( Cons("c", Nil) )
+
+= 1 + 1 + 1 + lengthOf( Nil )
+
+       the first equation applies here:
+
+= 1 + 1 + 1 + 0
+
+= 3
+</pre>
+Here is a two-dimensional drawing of the above calculation;
+the drawing shows how the recursive style of data-structure processing
+descends into the Conslist structure while it calculates its answer:
+<pre>
+lengthOf(
+Cons-----------------------+
+|     "a"                  |
+|     Cons--------------+  |
+|     |    "b"          |  |
+|     |    Cons-------+ |  |
+|     |    |    "c"   | |  |
+|     |    |    Nil   | |  |
+|     |    +----------+ |  |
+|     +-----------------+  |
++--------------------------+  )
+
+=  1 +
+      lengthOf(
+      Cons--------------+   
+      |    "b"          |   
+      |    Cons-------+ |   
+      |    |    "c"   | |   
+      |    |    Nil   | |   
+      |    +----------+ |   
+      +-----------------+   )
+
+= 1 +
+    1 +
+       lengthOf(
+           Cons-------+     
+           |    "c"   |     
+           |    Nil   |     
+           +----------+ )
+
+= 1 +
+    1 +
+      1 +
+        lengthOf( Nil )
+
+= 1 + 1 + 1 + 0  =  3
+</pre>
+
+<p>
+How does the above reasoning translate into Java programming?
+Once again, here is the coding of <tt>lengthOf</tt> in Java:
+<pre>
+public int lengthOf(Cell l)
+{ int length;
+  if ( l == null )
+       { length = 0; }
+  else { length = 1 + lengthOf(l.getNext()); }
+  return length;
+}
+</pre>
+We might well ask: Does the execution of the Java coding
+construct the graphical structures shown in the above drawings?
+Well, not exactly---recall that computer heap storage is ``flat''
+and nonnested.   Remember that we have been using <tt>Cell</tt>s to
+represent such conslists.
+Hence, a three-level nested structure like
+<tt>Cons("a", Cons("b", Cons("c", Nil)))</tt> is in fact mimicked
+by three separate cells (and <tt>null</tt>) that
+are linked together with storage addresses:
+<pre>
+a4 : Cell----+       a3: Cell----+       a2: Cell---+  
+|  "a"       |       |   "b"     |       |  "c"     | 
+|  a3        |       |   a2      |       |  null    |
++------------+       +-----------+       +----------+
+</pre>
+Remember also that a series
+of recursive-method invocations are modelled
+with the activation-record stack in the Java Virtual machine.
+Thus, an execution configuration like this one:
+<pre>
+1 + 1 + lengthOf( Cons("c", Nil) )
+</pre>
+or drawn graphically,
+<pre>
+  1 +
+    1 +
+       lengthOf(
+           Cons-------+
+           |    "c"   |
+           |    Nil   |
+           +----------+ )
+</pre>
+shows the situation where a list is partially counted due to
+3 recursions.   Recall from the previous lecture that,
+within the Java Virtual Machine, the
+activation-record stack looks like this:
+(Note: the stack is tipped on its
+side so that it is growing from left to right.)
+<pre>
+                                                  top
+                                                   |
++--------------------------------------------------V-----
+| +---------------+ +---------------+ +-----------+
+| | l == a4       | | l == a3       | | l == a2   |
+| | length = 1 + ?| | length = 1 + ?| |           |
+| |  ...          | |  ...          | |   ...     |
+| +---------------+ +---------------+ +-----------+
++--------------------------------------------------------
+</pre>
+The activation-record stack shows that <tt>lengthOf</tt> has started
+three times, and the most recent activation is trying to count the
+length of the list at address <tt>a2</tt>.  Once the <tt>a2</tt>-list
+length is counted, then the answer, an integer, will be returned
+to the caller, which adds one to it, giving the length of the
+<tt>a3</tt> list.  <em>That</em> answer is returned, to its caller,
+which adds one, giving the length of the <tt>a4</tt>-list.
+
+<p>
+Again, please review the previous lecture to see how the Java Virtual
+Machine uses an activation-record stack to compute recursive method
+calls.
+
+<p>
+In summary, the equational calculations and two-dimensional drawings
+give us powerful design and reasoning tools that are more elegant
+than but nonetheless consistent with
+the actual computer implementation.  When trying to solve a complex
+data-structure problem, it is often helpful to visualize the solution as
+a graphical computation on the nested, recursive data structure.
+
+
+
+<h3>More examples of Conslist calculations</h3>
+
+<p>
+If you are interested,
+here is another standard example written in the recursive style:
+<pre>
+/** toString assembles a string representation of a Conslist:  */
+toString(Nil) = ""
+toString( Cons(h, t) ) =  h.toString() + " " + toString(t)
+</pre>
+It is easy to reformat this example into a recursive Java method:
+<pre>
+public String toString(Cell l)
+{ String answer;
+  if ( l == null )
+       { answer = ""; }
+  else { answer = l.getVal().toString() + " " + toString(l.getNext()); 
+       }
+  return answer;
+}
+</pre>
+
+<p>
+Both <tt>lengthOf</tt> and <tt>toString</tt> are simple examples
+of recursive processing that traverses all elements of
+a conslist.  Of course, we know that we can traverse a list with
+a mere while-loop.  Are there patterns of list processing that are
+not merely mimicking loops?   Yes---here are two:
+<pre>
+/** append accepts two conslists as arguments and 
+  *  build sa new list that has the contents 
+  *  of the two, appended together */
+append(Nil, ys) = ys
+append(Cons(h, t),  ys) =  Cons(h, append(t, ys))
+</pre>
+The above pattern is worth pondering---<tt>append(list1, list2)</tt>
+says we should build the appended list by descending into the
+innermost structure of <tt>list1</tt>, level by level, attaching
+<tt>list1</tt>'s elements onto the front of <tt>list2</tt> as we go.
+It is enlightening to see this in a calculational trace:
+<pre>
+append( Cons("a", Cons("b", Nil)),  Cons("z", Nil) )
+= Cons("a",  append( Cons("b", Nil),  Cons("z", Nil) ))
+= Cons("a",  Cons("b",  append( Nil, Cons("z", Nil) )))
+= Cons("a",  Cons("b",  Cons("z", Nil)))
+</pre>
+Notice how the <tt>Cons</tt> structures are <em>enclosing</em> the 
+recursive invocations.
+
+<p>
+It is fun to redraw the calculation graphically:
+<pre>
+append(
+Cons--------------+      Cons-------+
+|    "a"          |      |    "z"   |
+|    Cons-------+ |      |    Nil   |
+|    |    "b"   | |      +----------+  )
+|    |    Nil   | |   
+|    +----------+ |   
++-----------------+  ,
+
+=
+
+Cons--------------------------------------------+
+|    "a"                                        |
+|    append( Cons-------+     Cons-------+      |
+|            |    "b"   |     |    "z"   |      |
+|            |    Nil   |     |    Nil   |      |
+|            +----------+ ,   +----------+  )   |
++-----------------------------------------------+
+
+=
+
+Cons--------------------------------------------+
+|    "a"                                        |
+|    Cons---------------------------------+     |
+|    |    "b"                             |     |
+|    |    append( Nil,  Cons-------+      |     |
+|    |                  |    "z"   |      |     |
+|    |                  |    Nil   |      |     |
+|    |                  +----------+  )   |     |
+|    +------------------------------------+     |
++-----------------------------------------------+
+
+=
+
+Cons---------------------------+
+|    "a"                       |
+|    Cons----------------+     |
+|    |    "b"            |     |
+|    |    Cons-------+   |     |
+|    |    |    "z"   |   |     |
+|    |    |    Nil   |   |     |
+|    |    +----------+   |     |
+|    +-------------------+     |
++------------------------------+
+</pre>
+It is a bit amazing that we can replicate this systematic recursive
+descent in Java, but we can:
+<pre>
+public Cell append(Cell list1, Cell list2)
+{ Cell answer;
+  if ( list1 == null )
+       { answer = list2; }
+  else { answer =
+            new Cell(list1.getVal(),
+                     append(list1.getNext(), list2));
+       }
+  return answer;
+}
+</pre>
+The power comes from nesting the recursive invocation,
+<tt>append(list1.getNext(), list2)</tt>
+<em>inside</em> the use of <tt>new Cell( ... )</tt>!
+
+<p>
+Here is a question for you to consider:  For this example,
+<pre>
+Cell alist = new Cell("a", new Cell("b", null));
+Cell blist = new Cell("z", null));
+Cell clist = append(alist, blist);
+</pre>
+are either of <tt>alist</tt> or <tt>blist</tt> altered due to
+the use of <tt> append(alist, blist)</tt> to construct <tt>clist</tt>?
+The answer is <em>no</em>---indeed, <tt>clist</tt> and <tt>blist</tt>
+share the same objects, but the lists are not altered!
+(If you are uncertain of this, draw a picture of computer heap storage
+and work the example by hand.)
+
+<p>
+Here is a second example that employs a similar cleverness:
+<pre>
+/** reverse builds a list that is the reversed version
+  *  of its argument */
+reverse(Nil) = Nil
+reverse(Cons(h, t)) = append( reverse(t), Cons(h, Nil) )
+</pre>
+This one is a fun exercise for you to work for yourself:
+<pre>
+public Cell reverse(Cell list)
+{ Cell answer;
+  if ( list1 == null )
+       { answer = null; }
+  else { answer = append(reverse(list.getNext()),
+                         new Cell(list.getVal(), null));
+       }
+  return answer;
+}
+</pre>
+A question: why must we use <tt>new Cell(list.getVal(), null)</tt>
+and not just <tt>list.getVal()</tt>?
+
+
+<h3>Other inductively defined data structures</h3>
+
+<p>
+Other data structures can be defined by means of inductive definition.
+Here are some classic examples:
+
+<h4>File Systems</h4>
+
+The standard disk file system is perhaps the best known inductively
+defined data structure:
+<dl>
+<dd>
+An object is a <tt>FileSystem</tt>-object if
+<ul>
+<li>
+it is a structure, <tt>Textfile</tt>; or
+<li>
+it is a structure, <tt>Folder(t1, ..., tm, f1, ..., fn)</tt>,
+where m >= 0 and n>= 0, 
+all <tt>ti</tt> are  <tt>Textfile</tt>s, and
+all <tt>fj</tt> are <tt>Filesystem</tt>s.
+</ul>
+</dl>
+The second clause of the definition states that folders can hold
+zero or more textfiles and zero or more (sub)folders.
+
+<p>
+A huge advantage of this form of file system is that it can grow
+as deeply as needed when the user adds more and more textfiles and folders.
+
+<p>
+Say that we want to write a program that counts all the textfiles held
+in a file system.  How do we start?   The equational specifications
+show us the way:
+<pre>
+/** countFiles  counts the number of textfiles in a file system */
+
+countFiles( Textfile ) =  return 1;
+
+countFiles( Folder(t1, ..., tm, f1, ..., fn) )
+   =  subcounts = 0;
+      for ( j in 1 to n )  subcounts = subcounts + countFiles(fj);
+      return  m + subcounts;
+</pre>
+The recursions into the subfolders neatly total the counts of textfiles
+in the subfolders, which we sum into the total count.
+
+
+<h4>Natural numbers</h4>
+
+The <em>natural numbers</em> are the nonnegative integers---0, 1, 2,
+etc.  Surprisingly, these numbers can be viewed as structures in an
+inductively defined data type:
+<dl>
+<dd>
+An object is a <tt>Nat</tt>-object if
+<ul>
+<li>
+it is the object, <tt>Zero</tt>; or
+<li>
+it is a structure, <tt>Succ( N )</tt>, where <tt>N</tt> is an existing
+<tt>Nat</tt> object.
+</ul>
+</dl>
+With this formulation,
+<tt>0</tt> is represented as <tt>Zero</tt>,
+<tt>1</tt> is represented as <tt>Succ(Zero)</tt>,
+<tt>2</tt> is represented as <tt>Succ(Succ(Zero))</tt>,
+and so on.  (Think of <tt>Nat</tt> objects as the numbers in
+``base one'' arithmetic.)
+
+<p>
+Admittedly, representing numbers as nested structures is a game, 
+but the ``game'' motivates modern-day set theory and even the
+construction of computer circuits.
+
+<p>
+Here are some examples of processing natural numbers:
+
+<p>
+Checking if a number is even:
+<pre>
+isEven(Zero) = true
+isEven(Succ(N)) = !isEven(N)
+</pre>
+An example: is <tt>3</tt> even?
+<pre>
+isEven(Succ(Succ(Succ(Zero))))
+= ! isEven(Succ(Succ(Zero)))
+= ! ! isEven(Succ(Zero))
+= ! ! ! isEven(Zero)
+= ! ! ! true
+= ! ! false
+= ! true
+= false
+</pre>
+
+<p>
+Doubling a number:
+<pre>
+double( Zero ) = Zero
+double( Succ(N) ) = Succ(Succ( timesTwo(N) ))
+</pre>
+Try it---say we compute <tt>double( Succ(Succ(Zero)) )</tt>:
+<pre>
+double( Succ(Succ(Zero)) )
+= Succ(Succ( double( Succ(Zero) ) ))
+= Succ(Succ( Succ(Succ( double(Zero) )) ))
+= Succ(Succ( Succ(Succ( Zero )) ))
+</pre>
+
+<p>
+Addition:
+<pre>
+add( Zero,  N ) = N,   where  N  is any Nat-object whatsoever
+add( Succ(M), N ) =  Succ( add(M,N) )
+</pre>
+An example of <tt>3 + 2</tt>:
+<pre>
+add( Succ(Succ(Succ(Zero))),  Succ(Succ(Zero)) )
+= Succ(  add(Succ(Succ(Zero)), Succ(Succ(Zero)) )
+= Succ( Succ( add(Succ(Zero)), Succ(Succ(Zero)) ))
+= Succ( Succ( Succ( add(Zero, Succ(Succ(Zero)) )))
+= Succ( Succ( Succ( Succ(Succ(Zero)) )))
+</pre>
+
+<p>
+Multiplication:
+<pre>
+mult( Zero,  N ) = Zero
+mult( Succ(M), N) = add(N, mult(M, N))
+</pre>
+This definition exploits the arithmetical fact that multiplication is
+repeated addition.
+Here is <tt>3 * 2</tt>:
+<pre>
+mult( Succ(Succ(Succ(Zero))),  Succ(Succ(Zero)) )
+= add( Succ(Succ(Zero)),  mult( Succ(Succ(Zero)), Succ(Succ(Zero)) ) )
+= add( Succ(Succ(Zero)),  add( Succ(Succ(Zero)),  mult( Succ(Zero), Succ(Succ(Zero)) ) )))
+= add( Succ(Succ(Zero)),  add( Succ(Succ(Zero)),  
+        add( Succ(Succ(Zero)), mult(Zero, Succ(Succ(Zero)) ))))
+= add( Succ(Succ(Zero)),  add( Succ(Succ(Zero)),  
+        add( Succ(Succ(Zero)), Zero))))
+</pre>
+At this point, we can apply the definition of <tt>add</tt>
+to compute the final answer,
+<tt>Succ(Succ(Succ(Succ(Succ(Succ(Zero)))))</tt>.
+
+<p>
+In a similar way, all of arithmetic can be defined as recursively
+defined operations on <tt>Nat</tt> objects, and indeed,
+all mechanical computation can be formalized <em>solely</em> in terms
+of recursive programming patterns on <tt>Nat</tt> objects.
+
+<h4>Binary numerals</h4>
+
+Electronic
+computers perform arithmetic on binary numbers , which can be exposed
+as an inductively defined data type:
+<dl>
+<dd>
+An object is a <tt>BinaryNumeral</tt>-object if
+<ul>
+<li>
+it is the object, <tt>0</tt>; or
+<li>
+it is the object, <tt>1</tt>; or
+<li>
+it is a structure, <tt>[N]0</tt>, where <tt>N</tt> is an existing
+<tt>BinaryNumeral</tt> object.  (Usually, we write this as just <tt>N0</tt>.)
+<li>
+it is a structure, <tt>[N]1</tt>, where <tt>N</tt> is an existing
+<tt>BinaryNumeral</tt> object.  (Usually, we write this as just <tt>N1</tt>.)
+</ul>
+</dl>
+For example, the binary numeral 13, normally written as 1101,
+has this internal structure:  <tt>[[[1]1]0]1</tt>
+The internal structure is important, because it is exploited in the
+wiring of arithmetic operations into a computer chip.
+
+<p>
+An example:
+<pre>
+/** computing the decimal value of a BinaryNumber:  */
+valueOf(0) = 0
+valueOf(1) = 1
+valueOf([N]0) = 2 * valueOf(N)
+valueOf([N]1) = (2 * valueOf(N)) + 1
+</pre>
+
+As an exercise, you might write the equations for adding, multiplying,
+etc., binary numbers.  The equations you write turn out to be one
+form of the wiring diagrams taught in circuit theory.
+
+<h4>Booleans</h4>
+
+An inductive data type need not have recursion in its definition:
+<dl>
+<dd>
+An object is a <tt>boolean</tt>-object if
+<ul>
+<li>
+it is the object, <tt>false</tt>; or
+<li>
+it is the object, <tt>true</tt>
+</ul>
+</dl>
+Although there is no recursion in the inductive definition, the same
+principles apply when designing operations on elements of the type:
+<pre>
+negation(false) = true
+negation(true) = false
+
+and(false, B) = false   (for any boolean, B)
+and(true, B) = B        (for any boolean, B)
+
+or(false, B) = B        (for any boolean, B)
+or(true, B) = true      (for any boolean, B)
+</pre>
+
+<h4>Binary Trees</h4>
+Soon, we will study this data type in great detail, as it is perhaps
+the most important one in data structures:
+<dl>
+<dd>
+An object is a <tt>BinaryTree</tt>-object if
+<ul>
+<li>
+it is the object, <tt>Leaf</tt>; or
+<li>
+it is a structure, <tt>Node(v, l, r)</tt>, where <tt>v</tt> is an
+<tt>Object</tt>, and <tt>l</tt> and <tt>r</tt> are already existing
+<tt>BinaryTree</tt>-objects.
+</ul>
+</dl>
+
+</body>
+

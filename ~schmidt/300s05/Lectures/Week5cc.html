@@ -1,0 +1,247 @@
+
+<body bgcolor="#FFFFFF">
+
+<h2>Iterative and Recursive Processing of Linked Lists: Execution Traces</h2>
+
+<p>
+We can best understand the loop invariant of method <tt>lengthOf</tt>
+if we check it against an execution trace of the method's invocation.
+Again, here is the method:
+<pre>
+public int lengthOf(Cell l)
+{ int length = 0;
+  Cell c = l;
+  while ( c != null )
+      //   lengthOf(l) == length + lengthOf(c)
+        { length = length +1;
+          c = c.getNext();
+        }
+ return length;
+}
+</pre>
+Say we have this list:
+<pre>
+<img src="DoubleLinkFigs/listex.jpg">
+</pre>
+and we wish to compute the result of <tt>lengthOf(a1)</tt>.
+The method is entered, and upon entry to the loop, its variables like this:
+<pre>
+<img src="DoubleLinkFigs/loop1.jpg">
+</pre>
+We easily verify that the invariant holds after zero loop iterations:
+<pre>
+ lengthOf(l) == length + lengthOf(c)
+</pre>
+because <tt>length == 0</tt> and <tt>lengthOf(a1)</tt> should, in principle,
+compute to 3.
+
+<p>
+The first loop iteration counts the leading cell of the list:
+<pre>
+length = length +1;
+c = c.getNext();
+</pre>
+and we have
+<pre>
+<img src="DoubleLinkFigs/loop2.jpg">
+</pre>
+and again, <tt>lengthOf(l) == length + lengthOf(c)</tt> holds,
+because <tt>length == 1</tt> and <tt>lengthOf(a2)</tt> should
+compute to 2.
+
+<p>
+The next loop iteration gives us
+<pre>
+<img src="DoubleLinkFigs/loop3.jpg">
+</pre>
+and then we encounter
+<pre>
+<img src="DoubleLinkFigs/loop4.jpg">
+</pre>
+Which causes the loop to halt.
+We confirm that
+<pre>
+ lengthOf(l) == length + lengthOf(c)
+</pre>
+because <tt>length == 3</tt> and <tt>lengthOf(null)</tt> is of course 0.
+
+<h3>Execution trace of recursive processing</h3>
+
+Here is the recursively defined method for computing length:
+<pre>
+/** lengthOf  returns the length of list  l  */
+public int lengthOf(Cell l)
+{ int length;
+  if ( l == null )
+       { length = 0; }
+  else { length = 1 + lengthOf(l.getNext()); }
+  return length;
+}
+</pre>
+And again, here is the list to be processed:
+<pre>
+<img src="DoubleLinkFigs/listex.jpg">
+</pre>
+An execution trace of <tt>lengthOf(a1)</tt> must be drawn with
+the activation-record stack of the Java Virtual Machine.
+Here is the stack when the method starts:
+
+<p>
+<img src="DoubleLinkFigs/stack1.jpg">
+
+The activation record shows that list <tt>a1</tt> must be counted.
+Because the list is non-null, the method's else-arm must be computed:
+<pre>
+else { length = 1 + lengthOf(l.getNext()); }
+</pre>
+This computes to
+<pre>
+length = 1 + lengthOf(a2)
+</pre>
+The recursive invocation starts a new copy of <tt>lengthOf</tt>, and a
+second activation record appears:
+<p>
+<img src="DoubleLinkFigs/stack2.jpg">
+The picture shows that the result of calculating the length of list
+<tt>a2</tt> will be returned to the calling method, which uses it to
+calculate the length of list <tt>a1</tt>.
+
+<p>
+Because <tt>a2</tt> is non-null, the else-arm is again computed, generating
+a third recursive call:
+<p>
+<img src="DoubleLinkFigs/stack3.jpg">
+The pattern of recursions is now established, and the next recursion
+generates this stack:
+<p>
+<img src="DoubleLinkFigs/stack4.jpg">
+<tt>null</tt> denotes an empty list, which has length 0.
+The result, 0, is returned to its caller:
+<p>
+<img src="DoubleLinkFigs/stack5.jpg">
+The caller can now compute the length of list <tt>a3</tt> ---
+it is 1:
+<p>
+<img src="DoubleLinkFigs/stack6.jpg">
+Now that <tt>a3</tt>'s length is computed, it is returned to its caller:
+<p>
+<img src="DoubleLinkFigs/stack7.jpg">
+and finally, we have the result for <tt>a1</tt>:
+<p>
+<img src="DoubleLinkFigs/stack8.jpg">
+
+<h3>Calculating the recursions without the stack</h3>
+
+The activation-record stack shows how the JVM remembers the history
+of recursions in its calculation of the length of list <tt>a1</tt>.
+But we can do a ``hand trace'' of the recursions without drawing the stack.
+
+<p>
+We do a kind of calculational arithmetic --- ``algebra'' --- on
+the method by drawing levels of recursion as a kind of stairstep:
+<pre>
+initial invocation
+  |
+  +--> recursive invocation
+         |
+         + --> another recursion
+                 |
+                 etc.
+</pre>
+The ``steps'' represent the activation records on the JVM stack.
+When a recursion returns an answer, we insert the answer at the
+source of the stairstep arrow.
+
+<p>
+Once again, here is the three-celled list:
+<pre>
+<img src="DoubleLinkFigs/listex.jpg">
+</pre>
+and here is the recursively defined method:
+<pre>
+/** lengthOf  returns the length of list  l  */
+public int lengthOf(Cell l)
+{ int length;
+  if ( l == null )
+       { length = 0; }
+  else { length = 1 + lengthOf(l.getNext()); }
+  return length;
+}
+</pre>
+We will hand draw the computation history triggered by
+<tt>lengthOf(a1)</tt>:
+<pre>
+lengthOf(a1)           // start with initial invocation
+ |
+ |                     // draw underneath it the method's coding
+ +-> Cell l = a1;     // write a variable declaration for the parameter
+     int length;
+     if ( l == null )
+          { length = 0; }
+     else { length = 1 + lengthOf(l.getNext()); }
+     return length;
+      |              // write computation steps one by one, if you wish:
+      V
+     Cell l = a1;
+     int length;
+     if ( false )
+        { length = 0; }
+     else { length = 1 + lengthOf(l.getNext()); }
+     return length;
+      |
+      V
+     Cell l = a1;
+     int length;
+     length = 1
+            + lengthOf(l.getNext());
+     return length; |                  // a recursion:
+                    |
+                    +-> Cell l = a2;
+                        int length;
+                        if ( l == null )
+                           { length = 0; }
+                        else { length = 1
+                               + lengthOf(l.getNext()); }
+                        return length;
+                         |
+                         V
+                        Cell l = a2;
+                        int length;
+                        length = 1
+                          + lengthOf(l.getNext()); //B
+                        return length; |
+                                       |
+                                       +-> Cell l = a3;
+                                           int length;
+                                           if  ... // etc.
+                                           return length;
+                                            |
+                                            .
+                                            |
+                                            V
+                                           length = 1
+                                            + lengthOf(l.getNext()); //A
+                                           return length; |
+                                                          |
+                                                          +-->
+                                                            Cell l = null;
+                                                            int length;
+                                                            if ( l == null )
+                                                             { length = 0; }
+                                                            return length;
+                                                             |
+                                                             V
+                                                            return 0;
+</pre>
+At this point, the 0 is returned to the source point of the invoking
+stairstep arrow (see the line marked //A).
+
+<p>
+This causes <tt>length</tt> at point //A to compute to 1, which is
+returned to point //B.  In this way, we can track by hand the progress
+of the recursions without confusing the multiple copies of local
+variables, <tt>length</tt>.
+
+</body>
+
+

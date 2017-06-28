@@ -1,0 +1,451 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+<h1>Execution Semantics</h1>
+
+How does a computer execute a Java program?
+Recall from the lecture on operating systems that the user can
+start a program by typing a command in a command window (or, by
+clicking an icon on the display, or by clicking a button inside
+an IDE).   This causes the OS to find the program on disk,
+reserve some primary storage to hold the program and its data,
+copy (<em>load</em>) the program into storage,
+and ready the program (now called a <em>process</em>) for
+execution by the CPU.
+
+<p>
+Here is a picture that shows primary storage:
+<pre>
+<img src="SemanticsEx/layout.jpg">
+</pre>
+
+<p>
+Java programs are more complex to load than C programs, because
+a monitoring program, called the <em>Java virtual machine (JVM)</em>
+must be loaded into the partition first.
+There are (at least) three reasons why the JVM lives in the
+partition with your application:
+<ul>
+<li>
+Your application is stored as <tt>.class</tt> files, which are <em>not</em>
+machine (binary) code --- the CPU cannot read and execute
+their instructions.  When your program executes, the JVM converts the
+instructions, one by one as needed, into machine code that the CPU
+can execute.  The conversion is called <em>interpretation</em>.
+<li>
+When a mouse is clicked (or text is typed) as input to your application,
+the operating system contacts the JVM, which converts the mouse click
+into a Java object and invokes the component of your application that is
+awaiting the mouse-click object.
+<li>
+The Java language allows components to be downloaded
+from other computers and copied into an application's storage partition.
+The JVM does the work of obtaining the component, checking that it is
+indeed a proper Java <tt>.class</tt>-file, and copying it into the
+storage partition.
+</ul>
+The JVM provides flexibility, but it occupies a lot of storage and
+its interpretation method is slow.  (This explains why Java is not
+a popular language for computationally-expensive tasks, like numerical
+computing.)
+
+<p>
+Loaded along with the JVM are the contents of
+the Java package,
+<tt>java.lang</tt>, which contains helper classes
+for integers, doubles, strings, etc., as well as <tt>System.in</tt>
+and <tt>System.out</tt>.
+Finally, the <tt>.class</tt>-files of the user program are loaded.
+The storage partition now looks like this:
+<pre>
+<img src="SemanticsEx/layout2.jpg">
+</pre>
+The remaining storage space, called <tt>heap storage</tt>, will hold
+the objects that are constructed when the application executes.
+
+<h3>Syntax and semantics</h3>
+
+A program's
+<em>syntax</em> is what the program looks like:
+how its words are spelled and how its words are combined into phrases
+and sentences.
+Every programming language has syntax laws, which state the correct
+ways of spelling words and forming sentences.
+
+<p>
+For example, in Java,
+<pre>
+int x = y + 1;
+</pre>
+has correct syntax, but
+<pre>
+x int == y 1 +
+</pre>
+does not.
+
+<p>
+The laws of syntax can also extend across separate commands,
+making it difficult to learn the precise syntax of a language.
+For example, although the command above appears to be proper,
+it is <em>not</em> when it is embedded in this sequence:
+
+<pre>
+boolean y = false;
+int x = y + 1;
+</pre>
+The issue is that Java requires that its variables be <em>typed</em>,
+and the first statement attaches a typing to <tt>y</tt> that makes its
+use in the second command improper.   Syntax laws that extend across
+commands are called <em>context laws</em>.
+
+<!--
+<p>
+DELETE:
+Context laws also appear in natural languages, like English.
+Here is an example, similar to the Java example,
+of a context error in English:
+<pre>
+Ed is my dog.
+Ed has wings.
+</pre>
+Context laws can be difficult to follow:
+<pre>
+Ed is my dog.
+I dressed him as an angel for my Halloween party.
+Ed has wings.
+</pre>
+-->
+
+
+<p>
+The <em>semantics</em> of a program is
+what the program means.  Although it is less obvious than syntax,
+a program's semantics is crucial.  (Imagine taking a French course
+where the instructor makes you write proper-looking French but
+does not tell you what the words mean --- this is useless.)
+
+<p>
+It is crucial to learn a language's semantics laws alongside its syntax laws. 
+Unfortunately,
+for complicated programming languages (like Java!), it is tempting to
+neglect learning semantics and
+use an IDE to ``show'' us what our Java programs mean.
+This is a fun game, but we cannot use this approach for any
+serious work.
+(Imagine learning only the syntax of French, then travelling to Paris
+and talking to the policeman at the airport to discover what your
+spoken French means --- the approach is inefficient and
+will likely lead to an unpleasant outcome.)
+
+<p>
+The semantics of a
+programming language can be described in several different
+ways, but the most common approach, especially for beginners,
+is <em>operational semantics</em>, which states how the language's commands
+operate when they are executed by a computer.
+
+<p>
+In the remainder of this lecture, we describe the operational semantics of
+crucial Java commands.  The descriptions are not absolutely precise,
+but they are precise enough that they give you an understanding of how
+the commands operate so that you can, for yourself, calculate
+a similar operational semantics for the programs that you write.
+
+<p>
+Your goal should be 
+<em> to know what your program
+will do before you give the program to the computer to execute.</em>
+
+
+
+<h3>A simple example</h3>
+
+We now study the operational semantics of a two-component Java application.
+The example shows us what happens when objects are created and
+when methods are invoked.
+
+<p>
+Here are the two components, a controller and a model:
+<pre>
+public class Controller
+{ public static void main(...)
+  { int x = 2;
+    Model m = new Model();
+    m.set(x+1);
+    System.out.println( m.get() );
+} }
+
+
+public class Model
+{ private int val;
+
+  public Model() { val = 0; }
+
+  public void set(int w)
+  { val = w;
+    printIt(); }
+
+  private void printIt() { System.out.println(val); }
+
+  public int get() { return val; }
+}
+</pre>
+The controller constructs the model object and the invokes its
+<tt>set</tt> and <tt>get</tt> methods.
+
+<p>
+When the program is started, (<tt>java Controller</tt>)
+the JVM and <tt>java.lang</tt> are loaded
+into the partition.  Then, <tt>Controller.class</tt> and
+<tt>Model.class</tt> are loaded, and an object is constructed in heap
+storage from
+<tt>Controller.class</tt>.
+
+<p>
+The JVM manages the execution.  In particular,
+it keeps an <em>instruction counter</em>, which remembers which
+instruction to execute.
+The JVM starts with the first instruction in the <tt>main</tt> method,
+which is associated with the
+<tt>Controller</tt> object:
+<pre>
+<img src="SemanticsEx/ex1a.jpg">
+</pre>
+The controller object rests at address
+100 (this was chosen arbitrarily for this example), and this is where
+we find its associated <tt>main</tt> method.  Within <tt>main</tt>,
+two cells are allocated for the method's local
+variables, <tt>x</tt> and <tt>m</tt>.
+(The cell labelled ``<tt>r.a.</tt>'' will be explained later.)
+
+<p>
+The first instruction that executes, at address 102, is <tt>int x = 2</tt>;
+it saves 2 in
+<tt>x</tt>'s cell:
+<pre>
+<img src="SemanticsEx/ex1b.jpg">
+</pre>
+The next instruction, at address 103, constructs a new <tt>Model</tt>
+object.  Several steps are performed:
+<ol>
+<li>
+A copy of <tt>class Model</tt> in constructed in storage, and cells
+for its private variables are allocated therein.
+<li>
+The object's constructor method is immediately executed.
+<li>
+The address of the newly constructed object is returned as the ``result''
+of executing the constructor method.  
+</ol>
+
+The picture below shows Step 1: The object is constructed, a cell is
+allocated for its variable, <tt>val</tt>, and
+its constructor method is started (the instruction counter in the
+JVM is reset to 502, the first instruction in the constructor method.) 
+
+<p>
+Notice the cell named <tt>r.a.</tt>,
+placed at the end of the constructor method.  This cell holds the
+<em>return address</em>, which remembers where the JVM should resume
+its execution of <tt>main</tt> once the constructor method finishes:
+<pre>
+<img src="SemanticsEx/ex1c.jpg">
+</pre>
+
+Next, Step 2 is the execution of the constructor method, which inserts
+0 into <tt>val</tt>'s cell.  Now, the instruction counter has progressed
+to address 503, which is the end of the constructor method.  This tells
+the JVM that it is time to return:
+<pre>
+<img src="SemanticsEx/ex1d.jpg">
+</pre>
+
+The JVM resets its instruction counter with the address in <tt>r.a.</tt>.
+This takes it back to executing the <tt>main</tt> method at address 103,
+which is
+<pre>
+m = *
+</pre>
+Now, it is time for Step 3:
+The address of the newly constructed model object, 500, is placed at
+*, where it is awaited:
+<pre>
+<img src="SemanticsEx/ex1e.jpg">
+</pre>
+Notice also that the remains of the constructor method in <tt>Model</tt>
+are erased.
+
+<p>
+Now, the assignment to <tt>m</tt> can be completed:
+<pre>
+<img src="SemanticsEx/ex1f.jpg">
+</pre>
+
+<p>
+Next, it is time to execute the method invocation,
+<tt>m.set(x+1)</tt>.  The evaluation of the invocation proceeds
+from left to right:
+<ol>
+<li>
+determine the target object's (<tt>m</tt>) address.
+(Here, it is 500.)
+<li>
+determine the value of the argument (actual parameter).
+Here, it is <tt>3</tt>.
+<li>
+start the invoked method within the target object.
+</ol>
+Steps 1 and 2 are shown below:
+<pre>
+<img src="SemanticsEx/ex1g.jpg">
+</pre>
+
+And here is the start of Step 3 --- method <tt>set</tt> is activated
+within the object at address 500.  Notice that its argument
+is saved in a local variable.
+As seen before, the return address is saved,
+and the instruction counter is reset to the first instruction within the
+invoked method:
+<pre>
+<img src="SemanticsEx/ex1h.jpg">
+</pre>
+
+The next instruction conducts an assignment, and the instruction that
+follows invokes yet another method.  This time, the method is internal
+to the object (we know this because there is no target object name, only
+a method name):
+<pre>
+<img src="SemanticsEx/ex1j.jpg">
+</pre>
+
+The invocation follows the usual pattern, and the <tt>printIt</tt> method
+is activated in the object:
+<pre>
+<img src="SemanticsEx/ex1k.jpg">
+</pre>
+
+The method's only instruction is yet another method invocation, this
+time to the pre-built object, <tt>System.out</tt>, which is loaded
+near the JVM.  The JVM determines that <tt>System.out</tt> lives
+at address, say, 46:
+<pre>
+<img src="SemanticsEx/ex1l.jpg">
+</pre>
+The JVM resets its instruction counter to
+start at the first instruction of <tt>System.out</tt>'s
+<tt>println</tt> method
+(pretend this is at address 48):
+<pre>
+<img src="SemanticsEx/ex1m.jpg">
+</pre>
+When <tt>println</tt> finishes, the return address is retrieved, and
+the instruction counter is reset to the end of the <tt>printIt</tt>
+method:
+<pre>
+<img src="SemanticsEx/ex1n.jpg">
+</pre>
+This instruction is itself another request to reset the instruction
+counter with yet another return address:
+<pre>
+<img src="SemanticsEx/ex1p.jpg">
+</pre>
+The next instruction, back in <tt>main</tt>, is another method call.
+(Indeed, it contains two method calls, so the one to <tt>get</tt>
+must be executed before the one to <tt>println</tt> may proceed.)
+<pre>
+<img src="SemanticsEx/ex1q.jpg">
+</pre>
+The invocation of <tt>get</tt> operates like the method calls already seen:
+<pre>
+<img src="SemanticsEx/ex1r.jpg">
+</pre>
+The rest of the execution is left for you to complete as an exercise.
+
+<h3>An example with multiple instances</h3>
+
+The second example, although short, emphasizes three points:
+<ol>
+<li>
+A program can construct multiple objects from the same class;
+<li>
+arrays are objects, too;
+<li>
+variables hold only the addresses of objects and <em>not</em> the
+objects themselves.
+</ol>
+
+<p>
+Here is the coding of a <tt>class Book</tt>, which will be used to
+construct multiple book objects that will be saved in a library's
+data base:
+<pre>
+public class Book
+{ String title;  String author;
+
+  public Book(String t, String a)
+  { title = t;  author = a; }
+
+  ...
+}
+</pre>
+Here is the coding of the database:
+<pre>
+public class Library
+{ Book[] books;  int count;
+
+  public Library(int size)
+  { books = new Book[size];  count = 0; }
+
+  public void insert(Book b)
+  { books[count] = b;  count = count + 1; }
+
+  public Book borrow(int key)
+  { return books[ key % count ]; }
+}
+</pre>
+And here is a simple controller that constructs some books,
+places them in the database, and perhaps does some other work:
+<pre>
+public class Controller
+{ public static void main(...)
+  { Book b1 = new Book("Tale of Two Cities", "Dickens");
+    Book b2 = new Book("Gravity's Rainbow", "Pynchon");
+    Library lib = new Library(4);
+    lib.insert(b1);
+    lib.insert(b2);
+     ...  // do additional work
+  }
+}
+</pre>
+
+<p>
+The Controller is started, and this makes a controller object in the
+storage partition:
+<pre>
+<img src="SemanticsEx/ex2a.jpg">
+</pre>
+The instruction at address 103 constructs a book object,
+as does the one at address 104.  Two books, both generated from
+the same <tt>.class</tt> file, live in storage:
+<pre>
+<img src="SemanticsEx/ex2b.jpg">
+</pre>
+Next, a Library object is constructed.  We see that the private variable
+in the Library object is an array, but in fact, the array is itelf
+a separate object, so the private variable holds the <em>address</em>
+of the array:
+<pre>
+<img src="SemanticsEx/ex2c.jpg">
+</pre>
+Finally, the instructions at address 106 and beyond copy the <em>addresses</em>
+of the two Book objects into the cells of the array.
+<pre>
+<img src="SemanticsEx/ex2d.jpg">
+</pre>
+
+
+</body>
+

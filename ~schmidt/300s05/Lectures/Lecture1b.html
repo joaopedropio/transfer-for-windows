@@ -1,0 +1,782 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+<h2>Software development in Java: interfaces and graphics</h2>
+
+When a program must have a Graphical User Interface (GUI),
+it is serious work to construct the program's view component
+and to connect the controller to the view.
+
+<p>
+To help,
+the Java packages, <tt>javax.swing</tt> and
+<tt>java.awt</tt>, provide classes that you use for constructing
+windows, buttons, text fields, and so on.
+These classes come ``unconnected'' and you must connect the classes
+in a standard way to generate GUI's that look and operate properly.  
+<!--
+A Java <em>interface</em> is used to state how a class expects to
+connect (send messages to) another, unknown class.
+To learn about interfaces, we study an example.
+-->
+
+<p>
+We review GUI construction via an example.
+
+<p>
+Say that a user wants a program that computes square roots and wants
+the input/output processed with a GUI.
+Here is a sample use-case:
+The GUI
+asks its user to type a number, and when the number is typed and
+the Compute button is pressed, the program computes the number's square
+root
+and presents the answer:
+<pre>
+<img src="GraphicsExample/sqrt1.gif">  <img src="GraphicsExample/sqrt2.gif">
+</pre>
+
+<p>
+We must write a program with this behavior.  The program's
+component structure fits the
+model-view-controller pattern, where the model holds the number
+upon which we compute the square root. The controller's 
+algorithm is simple:
+
+<p>
+When the Compute button is pressed,
+<ol>
+<li>
+read the number from the GUI's text field;
+<li>
+tell the model to compute the number's square root
+<li>
+tell the GUI to print it
+</ol>
+
+<p>
+Here is a picture of the application's component structure:
+<pre>
+<img src="VoteExample/Figs/design3.jpg">
+</pre>
+Notice that the algorithm starts <em>when the user presses the
+Compute button.</em>  This means the controller is somehow connected
+to the Compute button in the GUI.
+
+<p>
+To build the GUI, we
+use <tt>javax.swing</tt>'s
+prebuilt classes,
+<tt>JFrame</tt>, <tt>JButton</tt>, and
+<tt>JTextField</tt> (this is where the input is typed),
+and <tt>JLabel</tt> (this displays the answer).
+
+
+<!--
+<h4>About <tt>javax.swing</tt></h4>
+
+
+Classes
+<tt>JFrame</tt>, <tt>JButton</tt>, and
+<tt>JTextField</tt>, and others are used
+to construct the input-output view.
+The
+classes are found in the package, <tt>javax.swing</tt>.
+-->
+
+(Of course, <em>we need not read the coding inside these classes;
+we assume the classes are properly written and we construct objects
+from them.</em>)  
+
+<p>
+We import the components in the package with the
+statement,
+<pre>
+import javax.swing.*;
+</pre>
+
+<p>
+This style of programming --- relying on components that we do not
+ourselves write --- is crucial to modern-day programming.
+To connect the components from <tt>javax.swing</tt> to the ones
+we will write, we must use
+an important concept, called an <em>interface</em>.
+
+<p>
+So, we must take a small diversion
+from the design of the example to learn a bit about
+Java interfaces.
+
+<p>
+(If you wish to preview the results of the exercise, you can find
+the package that contains this example and the API at
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/GraphicsExample">
+<tt>http://www.cis.ksu.edu/~schmidt/300s05/Lectures/GraphicsExample</tt></a>.
+)
+
+
+<h3>Java Interfaces</h3>
+
+<p>
+<!--
+To import a package like <tt>javax,swing</tt>,
+we must have the package already written and
+available to our computer. 
+Often a big application is
+divided into several packages, which connect together, and the
+packages must be written in parallel.  (For example, the
+people who wrote <tt>javax.swing</tt> did so without knowing
+about our square-root program.)  How is this done?
+-->
+
+<p>
+A Java <tt>interface</tt> is a powerful tool for connecting together
+a package we write to a package other people write.
+Here is a small story to introduce how to use interfaces:
+
+<p>
+Say we write a <tt>package P</tt>, which contains
+<tt>class C</tt>, and <tt>class C</tt> needs to use some methods,
+<tt>m1</tt> and <tt>m2</tt>, that we will not write ---
+Someone else will write them and place them into another class.
+
+<p>
+So, we pretend that the 
+missing methods belong to a class named <tt>Helper</tt>:
+<pre>
+package P;
+/** class C  needs the help of two methods,  m1  and  m2.  They are missing,
+  *  and we assume that their codings will be supplied in a  Helper  object. */
+public class C
+{ private Helper helpme;  // Helper is the name we use for the missing component
+
+  public C(Helper h)      // When someone constructs a new C-object,
+                          // the address of a ``Helper'' object is supplied.
+  {  ...  helpme = h; ... }
+
+
+   ... helpme.m1() ... helpme.m2() ...   // Invoke the missing methods.
+                      
+}
+</pre>
+But what is <tt>Helper</tt>?   It is not a class ---it is the
+name of a java <tt>interface</tt>,
+and we must write this code also, which goes with <tt>class C</tt>:
+<pre>
+package P;
+/**  interface Helper lists the missing methods */
+public interface Helper
+{ public void m1();   // There is only a header line, no coding!
+  public void m2();   // Note the semicolons at the end of the header lines.
+}
+</pre>
+<tt>class C</tt> assumes that some
+``helper'' class, of type <tt>Helper</tt>, will contain the codings of the
+needed methods, <tt>m1</tt> and <tt>m2</tt>.  
+<tt>Interface Helper</tt> lists the names of the methods.
+
+<p>
+Next,
+<em>when the methods are written, they are placed in a class that
+``implements'' the interface:</em>
+
+<pre>
+package Q;
+import P.*;  // import  interface Helper
+public class Worker implements Helper   // the last two words assert
+       // that this class can be used as a ``Helper''
+{ ...
+  public void m1()
+  { ... code for  m1  goes here ... }
+
+  public void m2()
+  { ... code for  m2  goes here ... }
+
+  ... other methods may go here ...
+}
+</pre>
+The example shows us that the codings of <tt>m1</tt> and <tt>m2</tt>
+are exactly what are intended for others to use; this is indicated
+by the crucial phrase, <tt>implements Helper</tt>, in the class's
+header line.  The phrase indicates that <tt>class Worker</tt> can
+be used wherever a <tt>Helper</tt> is needed.
+
+<p>
+Because they agree on the same interface,
+<em>the two components may be ``connected'':</em>
+This can be done with
+a ``start-up'' class that makes the 
+connection.  The start-up class for the example might look like this:
+<pre>
+import P.*; 
+import Q.*;
+/** We use the  main  method to construct and connect together the
+  *  objects of the program.  */
+public class Start
+{ public static void main(String[] a) 
+  { ...
+    Worker w = new Worker();
+    C x = new C(w);  // ``connect''  w  to  x
+    ...
+  }
+}
+</pre>
+The start-up class constructs a <tt>Worker</tt>, <tt>w</tt>,
+which implements the
+<tt>Helper</tt> interface.  Then, the start-up class
+``connects'' the <tt>w</tt> to the <tt>C</tt>-object, <tt>x</tt>,
+that requires a <tt>Helper</tt>.  The connection is done by
+parameter passing --- it works! 
+Parameter passing is a standard way of connecting together objects.
+
+<p>
+In summary:
+<dl>
+<dd>
+<em>
+A Java interface defines a ``connection point'' that allows one class
+to connect to another.  But the classes that connect can
+be written and
+compiled separately, at different times and places, within different
+packages, on different computers.  The classes are connected by
+parameter passing in
+a ``start-up'' class.
+</em>
+</dl>
+
+
+
+<h3>The GUI for the Square Root Program</h3>
+
+<p>
+With the background on Java interfaces, we can understand better
+how we connect the classes in the <tt>javax.swing</tt> package
+to the square-root application that we are designing:
+
+<p>
+Classes <tt>JFrame</tt>, <tt>JButton</tt>, etc., of
+<tt>javax.swing</tt> are already written, and 
+they use a standardized connection, named
+<tt>interface ActionListener</tt>.
+The square-root program we write will connect its controller to the GUI
+via <tt>interface ActionListener</tt>.
+
+<p>
+Here are a few technical details:
+
+<ol>
+<li>
+When the user presses the mouse button, the computer hardware
+signals the operating
+system's mouse interrupt hander.  The interrupt handler
+determines that the mouse
+press was done on top of the Computer button ``owned'' by the square-root
+program.  
+<li>
+So, the OS starts
+a method in the
+<tt>JButton</tt>'s code, which in turn starts
+the controller that is connected to
+<tt>interface ActionListener</tt>.
+</ol>
+
+<p>
+To understand Step 2, let's examine
+the crucial program pieces.  First, the connection point is
+defined by <tt>interface ActionListener</tt>:
+<pre>
+package javax.swing;
+public interface ActionListener
+{ public void actionPerformed(ActionEvent e); }
+</pre>
+It says that the controller connects to the <tt>JButton</tt>
+by <tt>implementing ActionListener</tt>.     This means the
+controller's algorithm <em>must</em> be coded in a method named
+<tt>actionPerformed</tt>.
+
+<p>
+The controller that we write must look like this:
+<pre>
+package SquareRoot;
+import javax.swing.*;
+public class Controller implements ActionListener
+{ ...
+
+  /** actionPerformed holds the algorithm, which executes when the
+    *  Compute button is pressed.  */
+  public void actionPerformed(ActionEvent evt)
+  { ... read integer
+    ... compute square root
+    ... display result
+  }
+}
+</pre>
+
+<p>
+The final component in the puzzle is <tt>class JButton</tt>,
+which is pre-written and found in package
+<tt>javax.swing</tt>:
+<pre>
+package javax.swing;
+public class JButton
+{
+  private ActionListener handler;  // Remembers the object that will
+                           // be contacted when this button is pressed
+   ...
+
+  /** This method connects the  handler  object to the button:  */
+  public void addActionListener(ActionListener x)
+  { handler = x; } 
+
+   ...
+
+  // later in the coding of JButton, this instruction is started by the OS/JVM
+  //  when there is a mouse click:
+    ...  handler.actionPerformed(...); ...
+}
+</pre>
+
+<p>
+This
+class diagram for the square root program
+shows us how the
+components connect together:
+<pre>
+<img src="GraphicsExample/diagram1.jpg">
+</pre>
+There are two packages, <tt>SquareRoot</tt> and <tt>javax.swing</tt>.
+The view is constructed from <tt>SquareRootFrame</tt>, a class we write
+that <tt>extends JFrame</tt>.
+The frame uses <tt>JButton</tt> and <tt>JTextField</tt>.
+The model component is a single method that knows how to compute
+a square root.  The controller holds its algorithm inside
+method <tt>actionPerformed</tt>.
+
+<p>
+As described above, when the user presses the Compute button, this
+executes a part of <tt>JButton</tt>,
+that invokes a method named <tt>actionPerformed</tt>.
+Because <tt>Controller</tt> is connected to <tt>JButton</tt>,
+via the <tt>ActionListener</tt> interface, the <tt>actionPerformed</tt>
+method in the <tt>Controller</tt> is executed.
+
+<p>
+The various lines and arrow heads in the diagram are written in the style of
+the UML modelling language.  Here are their meanings:
+<ul>
+<li>
+A solid arrow with a large, white arrow head means that one class
+<tt>extends</tt> another---this is called <em>inheritance</em>.
+Here, <tt>class SquareRootFrame extends JFrame</tt>.
+<li>
+A dashed arrow means that a component connects to (uses) an interface.
+Here, the prebuilt <tt>java.awt.event</tt> object
+uses the <tt>ActionListener</tt> interface
+to send <tt>actionPerformed</tt> messages to whatever objects
+``connect to the other side'' of the interface.  (More precisely,
+to whatever object <tt>implements</tt> the interface.)
+<li>
+A dashed arrow with a large, white arrow head means that a class
+<em>implements</em> an interface, that is, the class has methods
+written for each of the method names listed in the interface.
+Here,
+<pre>
+class Controller implements ActionListener
+</pre>
+So, a <tt>Controller</tt> object is capable of receiving the
+<tt>actionPerformed</tt> messages.
+</ul>
+
+<p>
+The diagram shows that <tt>Controller</tt> and <tt>SquareRootFrame</tt>
+``connect'' across package boundaries.
+If a component in one package wishes to use components in another package,
+then it must have a Java <tt>import</tt> statement.  For example,
+the coding of <tt>class SquareRootFrame</tt> looks like this:
+<pre>
+package SquareRoot;
+import javax.swing.*;
+ ...
+public class SquareRootFrame extends JFrame
+{ ...
+   private JTextField input_text = new JTextField(...); 
+  ...
+}
+</pre>
+The <tt>import</tt> statement makes the classes in
+package <tt>javax.swing</tt> usable
+within <tt>class SquareRootFrame</tt>.
+(Recall that <tt>extends JFrame</tt> means that <tt>SquareRootFrame</tt>
+absorbs the code in <tt>class JFrame</tt> and appends its own code,
+thus generating a
+customized variant of frame.  Of course,
+the declaration of <tt>input_text</tt> defines a private variable
+that holds the address of a <tt>JTextField</tt> object, which is
+used in the customized frame.)
+
+<h3>Coding the program</h3>
+
+Now we are ready to write classes <tt>SquareRootComputer</tt>,
+<tt>Controller</tt>, and <tt>SquareRootFrame</tt>.
+We also write <tt>class Start</tt>, whose <tt>main</tt> method
+connects everything together.
+
+<h4>Model</h4>
+
+The purpose of the model is to compute a square root:
+<pre>
+package SquareRoot;
+/** SquareRootComputer computes square roots  */
+public class SquareRootComputer
+{  // there really is no need to construct a variable cell to hold
+   //  the number that we square-root, so we won't.
+
+   public SquareRootComputer() { }
+
+  /** computeSquareRoot  computes a square root
+    * @param i - the number
+    * @return  i's square root  */
+  public double computeSquareRoot(double i)
+  { double answer = 0;
+    if ( i < 0 )
+         { throw new RuntimeException("negative number: " + i); }
+    else { answer = Math.sqrt(i); }
+    return answer; }
+}
+</pre>
+
+<h4>Controller</h4>
+
+The controller's algorithm is embedded in the <tt>actionPerformed</tt>
+method; notice also how the controller's constructor method
+remembers the addresses of the view and model objects and tells
+the view to connect the controller to the Compute button.
+(Please see the coding of method <tt>connectControllerToButton</tt>
+in <tt>class SquareRootFrame</tt>, which follows.)
+<pre>
+package SquareRoot;
+import javax.swing.*;
+import java.awt.event.*;
+/** Controller implements a button that computes square roots */
+public class Controller implements ActionListener
+{ private SquareRootComputer calc;  // model object
+  private SquareRootFrame view;  // view object
+
+  /** Constructor Controller constructs the button
+    * @param v - the address of the view object 
+    * @param c - the address of the model object 
+  public Controller(SquareRootFrame v, SquareRootComputer c)
+  { view = v;
+    calc = c; 
+    // tell the view to connect its Compute button to this controller:
+    view.connectControllerToButton(this);
+  }
+
+  /** actionPerformed computes and displays a square root.
+    *  The method is called when the view's Computer button is pressed */
+  public void actionPerformed(ActionEvent evt)
+  { String answer = "";
+    try { String s = view.getInput().trim(); 
+          double number = new Double(s).doubleValue();
+          double root = calc.computeSquareRoot(number);
+          answer = "The square root of " + number + " is " + root;
+        }
+    catch(RuntimeException e)   // if  s  is erroneous, an exception occurs
+        { answer = "Bad input error:" + e.getMessage(); }  
+    view.setOutput(answer);
+  }
+}
+</pre>
+
+<h4>View</h4>
+
+The view must assemble the GUI from a frame, a text field,
+a button, and a label:
+<pre>
+package SquareRoot;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+/** SquareRootFrame shows the input and output for square-root computation*/
+public class SquareRootFrame extends JFrame
+{ private String BLANKS = "     ";
+
+  // input is typed into this field:
+  private JTextField input_text = new JTextField(BLANKS, 6); 
+  // the answer is displayed by this label:
+  private JLabel answer = new JLabel(BLANKS); 
+  // this is the button that triggers square-root computation:
+  private JButton compute_button = new JButton("Compute");
+
+  /** SquareRootFrame assembles and displays the frame  */
+  public SquareRootFrame()
+  { // here are the usual, painful steps for placing graphical
+    //  components into a JFrame:
+    Container cp = getContentPane();
+    cp.setLayout(new GridLayout(4, 1));
+      JPanel p1 = new JPanel(new FlowLayout());
+      p1.add(new JLabel("Type a number:"));
+    cp.add(p1);
+      JPanel p2  = new JPanel(new FlowLayout());
+      p2.add(input_text);
+    cp.add(p2);
+      JPanel p3 = new JPanel(new FlowLayout());
+      p3.add(answer);
+    cp.add(p3);
+      JPanel p4 = new JPanel(new FlowLayout());
+      p4.add(compute_button);
+    cp.add(p4);
+    setSize(350, 160);
+    setTitle("Square Root Convertor");
+    setVisible(true);
+  }
+
+  /** getInput returns the input the user typed into the text field
+    * @return the string typed in the text field  */
+  public String getInput()
+  { return input_text.getText(); }
+
+  /** setOutput displays a new answer and clears the input text field.
+    * @param s - the new answer displayed  */
+  public void setOutput(String s)
+  { answer.setText(s);
+    input_text.setText(BLANKS);
+  }
+
+  /** connectControllerToButton  connects the controller object to
+    *  the Compute button
+    * @param con - the controller object */
+ public void connectControllerToButton(Controller con)
+ { compute_button.addActionListener(con); }  // addActionListener is a
+      // method in JButton that connects the button press to the object
+      // that responds to the button press
+}
+</pre>
+The three methods included in the view are invoked by the controller
+to read the input number, to display the answer, and to connect
+the controller to the button that triggers the computation.
+
+<h4>Start-up</h4>
+
+The application is started by the command,
+<tt>java SquareRoot.Start</tt>.  The <tt>main</tt> method in
+<tt>Start</tt> assembles the application from its components:
+<pre>
+package SquareRoot;
+/** Start starts the square-root calculator application. */
+public class Start
+{ public static void main(String[] args)
+  { SquareRootComputer model = new SquareRootComputer();
+    SquareRootFrame view = new SquareRootFrame();
+    Controller con = new Controller(view,model);
+  }
+}
+</pre>
+
+The completed square-root computer, called <tt>package SquareRoot</tt>,
+can be downloaded at
+<a href="http://www.cis.ksu.edu/~schmidt/300s05/Lectures/GraphicsExample">
+<tt>http://www.cis.ksu.edu/~schmidt/300s05/Lectures/GraphicsExample</tt></a>.
+
+<!--
+<h4>Using a Java interface to handle a button press</h4>
+
+<ol>
+<li>
+The instructions that must be executed when the square-root
+application's button is pushed
+are
+contained within class <tt>ComputeButton</tt>.
+<li>
+But when
+the user clicks the mouse above the graphical button,
+the signal goes to <tt>JButton</tt> instead!
+</ol>
+How does the coding within <tt>class JButton</tt> know that it
+should invoke the instructions in <tt>class ComputeButton</tt>?
+Well, it doesn't---<em>the person who wrote <tt>class JButton</tt>
+did not know how the graphical button might be used in future
+applications</em>.   Therefore, some form of ``connection point'' or
+``plug-in point'' is needed so that future users of
+<tt>class JButton</tt> could ``plug into'' the mouse clicks and
+trigger computation.  This connection point is called a
+<em>Java interface</em>.
+
+<p>
+It is no accident that <tt>class ComputeButton</tt> uses a method
+named <tt>actionPerformed</tt> to hold the instructions that must be executed
+due to a mouse click on the button---<tt>class JButton</tt> is written
+<em>so that it invokes the <tt>actionPerformed</tt> method:</em>
+<pre>
+package javax.swing;
+public class JButton
+{ // this field remembers the address of the object that will
+  //  do computation when the button is clicked by the mouse:
+  private ActionListener handler;  
+
+   ...
+
+  public void addActionListener(ActionListener x)
+  { handler = x; }
+
+   ...
+
+  // there is also another method that contains code that reacts
+  // to a mouse click.  The crucial statement reads:
+  handler.actionPerformed(...);
+}
+</pre>
+That is, a private variable, <tt>handler</tt>, remembers the object
+that contains the code that must be triggered when the button is
+clicked.  The trigger is done by the statement,
+<tt>handler.actionPerformed(...)</tt>.
+The method, <tt>addActionListener</tt>, lets us set variable
+<tt>handler</tt> correctly.
+
+<p>
+Now, let's review what <tt>class ComputeButton</tt> looks like:
+<pre>
+package SquareRoot;
+import javax.swing.*;
+  ...
+public class ComputeButton extends JButton implements ActionListener
+{ ...
+  /** Constructor ComputeButton constructs the button
+    * @param v - the address of the view object */
+  public ComputeButton(SquareRootFrame v)
+  {  ...
+    //  tells class JButton to register this object, the ComputeButton,
+    //  to handle mouse clicks:
+    addActionListener(this);
+  }
+
+  /** actionPerformed computes and displays a square root  */
+  public void actionPerformed(ActionEvent evt)
+  { ... here are the instructions that are executed when the
+        button is pressed ...
+  }
+}
+</pre>
+The key points are:
+<ol>
+<li>
+<tt>ComputeButton extends JButton</tt>---this means that 
+<tt>ComputeButton</tt> is itself a customized version of <tt>JButton</tt>.
+<li>
+<tt>addActionListener(this)</tt>---in <tt>ComputeButton</tt>'s
+constructor method, we tell the underlying <tt>JButton</tt> to
+use <em>this very object---the <tt>ComputeButton</tt></em> as the
+object to contact when there is a mouse click on the button.
+<li>
+<tt>public void actionPerformed</tt>---the method holds the instructions
+that will be executed when the button is clicked.
+</ol>
+In summary:
+<ul>
+<li>
+The <tt>addActionListener</tt> method in <tt>JButton</tt>
+tells a button which object to contact when there is a mouse click.
+<li>
+The <tt>actionPerformed</tt> method holds the instructions that
+are executed when the mouse is clicked.
+</ul>
+
+<p>
+But there is one last technical loose end:  What is
+<tt>ActionListener</tt>?   It is mentioned in two places:
+<ol>
+<li>
+Within the field declaration of <tt>JButton</tt>:
+<pre>
+private ActionListener handler;
+</pre>
+<li>
+In the header line of <tt>ComputeButton</tt>:
+<pre>
+public class ComputeButton extends JButton implements ActionListener
+</pre>
+</ol>
+Clearly, the name <tt>ActionListener</tt> is used as a ``stand-in'' 
+for the type of the object held by the private field,
+<tt>handler</tt> in <tt>JButton</tt>.  This is crucial because the
+author of <tt>class JButton</tt> did not know about <tt>class ComputeButton</tt>,
+so a ``stand-in class name'' must be used instead.
+
+<p>
+Such a stand-in name is known as a <em>Java interface</em>.
+
+<p>
+If we dig within <tt>package javax.swing</tt>, we will locate this
+file, named <tt>ActionListener.java</tt>.  It is the official description
+of the stand-in name:
+<pre>
+package javax.swing;
+public interface ActionListener
+{ public void actionPerformed(ActionEvent e); }
+</pre>
+Note that the stand-in name
+<em>and all the methods associated
+with it</em> are listed in the file.
+
+<p>
+Now we can understand why the header line of <tt>class ComputeButton</tt>
+contains the phrase,  <tt>implements ActionListener</tt>---this tells
+the Java compiler that <tt>ComputeButton</tt> contains an
+<tt>actionPerformed</tt> method and can be used anywhere where
+an <tt>ActionListener</tt> object is required
+(e.g., in <tt>JButton</tt>!).
+
+<p>
+The preceding is a practical explanation of Java interfaces---<em>a
+Java interface lets one class refer to another class that is
+not yet written.</em>
+But there is a more important, philosophical viewpoint:
+A Java interface is a description (or specification) of a
+``connection'' or ``plug-in'' point, where one class
+(the one that <tt>implements</tt> the interface) connects to
+another class that uses/invokes the methods that are listed in
+the interface file.
+-->
+
+<h3>Interfaces Are Connection Points</h3>
+
+The square-root program showed how we can write a class,
+<tt>Controller</tt>, that connects with a
+prewritten object so that it receives button presses --- we
+<em>implement</em> the predefined interface, <tt>ActionListener</tt>.
+
+<p>
+Looking from the other side, the writers of the <tt>java.awt.event</tt>
+package were able to write <tt>class JButton</tt>,
+which receives button presses,
+even though the writers did not know which class would eventually handle
+the button presses---they made <tt>JButton</tt> send <tt>actionPerformed</tt>
+messages to whatever object connects to the
+<tt>ActionListener</tt> interface.
+
+<p>
+The two components (<tt>JButton</tt> and the controller)
+that connect to <tt>interface ActionListener</tt>
+are separate, and one can be unplugged and replaced by another without
+causing harm.  Interfaces are a powerful tool for building program
+subassemblies that can connect to other, unknown assemblies.
+
+<p>
+The preceding is a practical explanation of Java interfaces---<em>a
+Java interface lets one class refer to another class that is
+not yet written.</em>
+But there is a more important, philosophical viewpoint:
+A Java interface is a description (or specification) of a
+``connection'' or ``plug-in'' point, where one class
+(the one that <tt>implements</tt> the interface) connects to
+another class that uses/invokes the methods that are listed in
+the interface file.
+
+<p>
+In a later lecture, we learn to write our own interfaces.
+</body>
+
+
+

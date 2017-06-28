@@ -1,0 +1,442 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Ordered (search) trees</h2>
+
+<p>
+Trees are often used to implement databases, where Records
+are saved in the Nodes.  (Recall that a Record holds a key and some
+data.)  There is a standard way of building a tree that holds Records:
+
+<p>
+A binary tree is <em>ordered</em> if all its Nodes have the
+<em>ordering property</em>:  A Node has the ordering property iff
+<ol>
+<li>
+all the objects contained in the Node's left subtree have keys
+lessthan the key at the Node itself;
+<li>
+all the objects contained in the Node's right subtree have keys
+greater-than-or-equal-to the key at the Node itself.
+</ol>
+An ordered binary tree is sometimes called a
+<em>binary search tree</em>.
+
+<p>
+Here is an example ordered tree, where a Record is an integer paired
+with a string.
+(The nodes' addresses are <tt>a1</tt>, etc.  The Leaf objects
+are represented by dots.)
+<pre>
+        a1: (8,"e")
+       /     \
+a2: (5,"f")   a3: (11,"el")
+ /  \            /      \
+.   .    a4: (9, "n")  a5: (13,"th")
+             / \           / \
+            .   .         .   .
+</pre>
+Perhaps this tree was created by inserting the records,
+(8,"e"), (11,"el"), (9,"n"), (5,"f"), and (13,"th"), 
+one by one into an initially empty Leaf tree ---
+five Node objects and six Leaf objects were constructed and linked
+together.   Perhaps a method named
+<tt>insert</tt> was used make each of the five
+insertions.
+
+<p>
+Here is one possible specification of insertion:
+<pre>
+/** insert inserts an object in its proper position in an ordered tree
+    * @param v - the Record to be inserted
+    * @param t - the existing tree
+    * @return (the address of) a tree that looks just like  t
+    *   except it holds  v  also  */
+public BinaryTree insert(Record v, BinaryTree t)
+</pre>
+We write these simple
+schematic equations for the solution:
+<pre>
+insert(v, Leaf ) =  return  Node(v, Leaf(), Leaf());
+
+insert(v, Node(u, l, r) ) = 
+            if ( v.getKey() < u.getKey() )
+                 { return  Node(u, insert(v, l), r) }
+            else { return  Node(u, l, insert(v, r)) }
+</pre>
+(Please assume there is a <tt>getKey</tt> method that extracts
+the integer key held in a record.)
+
+<p>
+The first equation says that an insertion into a leaf tree demands that
+we return (the address of) a node tree that holds v.
+
+<p>
+The second equation says that an insertion into a nonempty, node tree,
+requires that we decide whether to insert downwards into the left subtree
+or downwards into the right subtree.
+
+<h3>Insertion into a mutable tree</h3>
+
+<p>
+We can implement the insertion schema in two ways: (i) with a mutable tree
+or (ii) with an immutable tree.  Let's attempt solution (i) first.
+We do this in three steps:
+<ol>
+<li>
+Starting from the root, search downwards for the Leaf that we will
+replace with the new record, v.
+<li>
+Once we find the leaf, create a new Node that holds record, v.
+<li>
+Discard the leaf and replace it with the new Node.
+</ol>
+
+<p>
+To do Step 3,
+we must use 
+<tt>setLeft</tt> and <tt>setRight</tt>
+methods to alter the existing tree's structure.  <tt>class Node</tt>
+must include these two methods:
+<pre>
+public class Node extends BinaryTree
+{ private Object val;
+  private BinaryTree left;
+  private BinaryTree right;
+    ...
+
+  public void setLeft(BinaryTree new_left)
+  { left = new_left; }
+
+  public void setRight(BinaryTree new_right)
+  { right = new_right; }
+}
+</pre>
+Here is the coding for mutable insertion.
+<pre>
+public BinaryTree insert(Record v, BinaryTree t)
+{ BinaryTree answer;
+  if ( t instanceof Leaf )
+     { answer = new Node(v, new Leaf(), new Leaf());  // we make a new Node
+                                                      // to hold  v.
+  else // t  is a Node:
+     { Record u = t.value();
+       if ( v.getKey() < u.getKey() ) // remember to properly recode  < 
+            { BinaryTree new_left = insert(v, t.left());
+              // attach the revised left subtree to  t:
+              t.setLeft(new_left);
+            }
+       else // v's key is  >= u's key :
+            { BinaryTree new_right = insert(v, t.right());
+              t.setRight(new_right);
+            }
+       answer = t; 
+     }
+  return answer;
+}
+</pre>
+We use recursions to <em>locate</em> the Leaf where
+the object, <tt>v</tt>, should be inserted, where we construct a new
+Node to hold <tt>v</tt>.   <em>This is the only Node that is constructed.</em>
+We use the <tt>setLeft</tt> and <tt>setRight</tt> operations to 
+reset the existing Nodes' branches to the new Node.
+
+<p>
+Notice that the method <em>cannot</em> insert Record <tt>v</tt> into tree
+<tt>t</tt>, when <tt>t</tt> is 
+a Leaf!   In this case, a new Node must be constructed and must replace
+<tt>t</tt>.  This is the reason why the method returns the address
+of the altered tree.
+
+<p>
+Here is a typical use of <tt>insert</tt> in an application:
+<pre>
+public class MyDataStructureBasedOnATree
+{ private BinTree mytree;   
+
+  // the constructor method builds an empty tree --- a leaf:
+  public MyDataStructureBasedOnATree()
+  { mytree = new Leaf(); }
+   ...
+
+   // the insertRecord method uses the  insert  method we just coded:
+   public void insertRecord(Record v)
+   { mytree = insert(v, mytree); }
+}   
+</pre>
+
+<h3>Ordered tree lookup is a binary search</h3>
+
+<p>
+Finding an element in an ordered tree can be conducted with a binary-search-like
+method (which also executes in time <em>order log<sub>2</sub>n</em>
+for a tree that holds <tt>n</tt> values); here is its specification:
+<pre>
+/** find  searches for an an object in an ordered tree 
+  * @param k - the key of the object to be found
+  * @return the address of the Node within  t  where  k  is found;
+  *   if  k  is not found in  t,  return null  */
+public Node find(Key k, BinaryTree t)
+</pre>
+Here are the schematic equations:
+<pre>
+find(k, Leaf ) = return  null;
+
+find(k, Node(u, l, r) ) =
+          if ( k == u.getKey() ) { return the address of this node; }
+          if ( k < u.getKey() ) { return find(k, l) }
+          if ( k > u.getKey() ) { return find(k, r) }
+</pre>
+Here's how we might code the equations in Java:
+<pre>
+public Node find(Key k, BinaryTree t)
+{ Node found;  // holds the address of the Node where  k  is found in  t
+  if ( t instanceof Leaf )  // have we reached the end of the search?
+       { found = null; }    // yes, and we failed to find  k 
+  else // t is a Node, so let's ask if we have found  k  here:
+       { if ( k == t.value().getKey() )  // NOTE: remember to replace  ==  with the
+                                //   correct operation for checking equality
+                 { found = t; }
+         else if ( k < t.value().getKey() )  // NOTE: remember to replace  <  with the
+                                    //  correct operation for checking lessthan
+		 // search downwards to the left:
+                 { found = find(k, t.left()); }
+         else // k > t.value().getKey(), so search downwards to the right:
+                 { found = find(k, t.right()); }
+       }
+  return found;
+}
+</pre>
+Because the ordered tree has ``sorted'' its values from ``left to right,''
+the recursive lookup operates 
+like the binary search algorithm on sorted arrays, searching only that
+half of the tree where the desired object must reside.
+
+
+<h4>Insertion into an immutable tree (optional material)</h4>
+
+Recall from the previous Lecture that it is possible to do a Record insertion
+into a tree <em>without</em> resetting any links to subtrees!
+This approach builds a new entire tree that looks just like
+the tree we started with but it also holds the newly inserted Record:
+<pre>
+public BinaryTree insert(Record v, BinaryTree t)
+{ BinaryTree answer;
+  if ( t instanceof Leaf )
+       // then, build a new node to hold v:
+       { answer = new Node(v, new Leaf(), new Leaf()); }
+  else // t is a Node:
+       { if ( v.getKey() < t.value().getKey() ) // remember to replace  <  with the
+                               //  correct operation for checking  <
+              // Then, insert  v  into the left subtree and rebuild
+              //  the tree from its root value, its new left subtree,
+              //  and its existing right subtree:
+                 { answer =
+                     new Node(t.value(), insert(v, t.left()), t.right());
+                 }
+         else // v's key is  >= t.value()'s key,  so insert  v  into the right subtree
+	      //  and rebuild the tree from its parts:
+                 { answer =
+                     new Node(t.value(), t.left(), insert(v, t.right()));
+                 }
+       }
+  return answer;
+}
+</pre>
+Notice that parts of the original tree are reused in the tree
+we build.
+For example, given this ordered tree:
+<pre>
+        a1: (8,"e")
+         /     \
+a2: (5,"f")   a3: (11,"el")
+   /  \            /      \
+  .   .    a4: (9, "n")  a5: (13,"th")
+                / \           / \
+               .   .         .   .
+</pre>
+inserting the record holding <tt>(7,"s")</tt>
+would build this tree as its answer:
+<pre>
+        a8: (8,"e")
+         /     \
+a7: (5,"f")   a3: the same subtree as above --- it's reused in the answer
+   /  \            /      \
+  .  a6: (9, "n")
+         / \    
+        .   .  
+</pre>
+That is, the invocation,
+<tt>insert(new Record(7,"s"), a1)</tt> triggers this instruction:
+<pre>
+answer = new Node(a1.value(), insert(new Record(7,"s"), a1.left()), a1.right());
+</pre>
+which computes to
+<pre>
+answer = new Node(8, insert(new Record(7,"s"), a2), a3);
+</pre>
+This means that subtree <tt>a3</tt> is used, unaltered, in the
+updated tree.
+
+<p>
+The recursion, <tt>insert(new Record(7,"s"), a2)</tt>,
+generates another recursion,
+<pre>
+answer = new Node(a2.value(), a2.left(), insert(new Record(7,"s"), a2.right()));
+</pre>
+which computes to
+<pre>
+answer = new Node(5, Leaf(), insert(new Record(7,"s"), Leaf()));
+</pre>
+
+<p>
+Finally, the insertion of <tt>new Record(7,"s")</tt> into a leaf causes Node a6 to be constructed,
+and then the parent nodes, a7 and a8, get constructed.
+
+
+<p>
+Although the construction of the answer tree looks more complex than
+that seen with mutable trees, there is a payback:
+Remember that the main advantage of immutable trees
+is that a program can maintain multiple trees that share each others'
+subtrees and the program can easily implement ``undo'' operations
+on a tree.  (Think about how we might undo the insertion
+of 7 in the previous example --- we merely revert to the node a1
+as the root node; it still exists, unaltered.)
+
+<h4>A less pretty method for insertion into a mutable tree (optional material)</h4>
+
+Let's return to the coding for inserting into a tree and resetting
+links.
+
+<p>
+It is tempting to rewrite its
+<tt>insert</tt> method as follows:
+<pre>
+/** insert  inserts object  v  in its proper position in an
+ *  ordered tree, t,  by replacing one of  t's  leaves by a Node holding v
+ * @param v - the object to be inserted
+ * @param t - the tree to be altered  */
+public void insert(Object v, BinTree t)
+{ ... }
+</pre>
+This version does <em>not</em> return the address of the updated tree.
+With this variant, we will have a problem with this example:
+<pre>
+BinaryTree mytree = new Leaf();
+insert("a", mytree);
+</pre>
+There is no way that <tt>insert</tt> can reset <tt>mytree</tt>,
+which is a Leaf, to hold a Node that holds <tt>"a"</tt>.
+This example shows why both codings of <tt>insert</tt> seen earlier
+return the address of the updated tree.
+
+<p>
+But there is one last variant of insertion into mutable trees
+that need not return as its answer the address of the altered tree.
+This variant requires that the tree to be altered is known to be a
+<tt>Node</tt>:
+<pre>
+/** insertIntoNode  places  u  into its proper position in _Node_ tree  n.
+  * @param u - the value to be inserted
+  * @param n - the Node tree that is mutated.  */
+public void insertIntoNode(Object u, Node n)  // note that  n  must be a Node!
+{ if ( u < n.value() )  // insert to the left?
+       { if ( n.left() instanceof Leaf )  // insert here?
+              { n.setLeft( new Node(u, new Leaf(), new Leaf()) ); }
+         else // n is a Node, so descend into its left subtree:
+	      { insertIntoNode(u, (Node)(current.left()); }
+       }
+  else // u >= n.value(), so insert to the right:
+       { if ( n.right() instanceof Leaf ) // insert here?
+              { n.setRight( new Node(u, new Leaf(), new Leaf()) ); }
+         else // n is a Node, so descend into its right subtree:
+	      { insertIntoNode(u, (Node)(n.right())); }
+       }
+}
+</pre>
+The correct way of using the above method goes as follows:
+<pre>
+BinTree mytree = ... ;
+  ...
+// insert object  u  into  mytree:
+if ( mytree instance of Leaf )
+   { mytree = new Node(u, new Leaf(), new Leaf()); }
+else { insert(u, (Node)mytree); }   
+</pre>
+Notice the castings, <tt>(Node)</tt>, whenever
+<tt>insertIntoNode</tt> is used.
+
+
+<h3>Loops and binary trees (optional material)</h3>
+
+Trees
+are normally computed upon with recursive method invocations.
+But, a loop can compute on a tree if these two conditions hold:
+<ol>
+<li>
+the computation traverses only one path (not all paths!) in the tree
+<li>
+all alterations that the
+computation makes are along the path traversed
+</ol>
+The <tt>find</tt> method satisfies these two conditions and can be
+written as a loop.  The loop is the usual form of a ``searching loop'':
+<pre>
+public boolean find(Element v, BinTree t)
+{ boolean found = false;
+  BinTree tree = t;
+  while ( !found  &&  !(tree instanceof Leaf) )
+        //  invariant:
+        //  found==true  implies  v  is in  t
+        //  found==false implies, if  v  is in  t, it will be found in  tree
+        { if ( v.equals(tree.value() )
+               { found = true; }
+          else { if ( v.lessthan(tree.value()) )
+                      { tree = tree.left(); }
+                 else { tree = tree.right(); }
+               }
+        }
+  return found;
+}
+</pre>
+Each loop iteration causes the value of <tt>tree</tt> to descend lower and
+lower into <tt>t</tt> until the desired object is located.
+
+<p>
+Finally, we can use the loop pattern to write
+insertion for a mutable tree, where we know for certain that the
+tree to be mutated is definitely a Node (and not a Leaf).
+Here is a not-so-elegant recoding of insertion into a mutable Node tree:
+<pre>
+/** insertIntoNode  places  u  into its proper position in Node tree  n.
+  * @param u - the value to be inserted
+  * @param n - the Node tree that is mutated.  */
+public void insertIntoNode(Object u, Node n)
+{ BinTree current = n;
+  boolean found_leaf = false;
+  while ( !found_leaf )
+        { if ( u < current.value() )  // insert to the left?
+             { if ( current.left() instanceof Leaf )  // insert here?
+                    { found_leaf = true; }
+               else { current = current.left(); }
+             }
+          else // u >= current.value(), so insert to the right:
+             { if ( current.right() instanceof Leaf ) // insert here?
+                    { found_leaf = true; }
+               else { current = current.right(); }
+             }
+        }
+  // we know that we must insert immediately underneath the  current  node:
+  if ( u < current.value() )
+     { current.setLeft( new Node(u, new Leaf(), new Leaf()) ); }
+  else
+     { current.setRight( new Node(u, new Leaf(), new Leaf()) ); }
+}
+</pre>
+The method loops as it searches downwards through the Nodes to locate
+a Leaf position that can be replaced by value <tt>u</tt>.
+After the loop quits, we do just one Node construction and just one
+link change.
+
+</body>

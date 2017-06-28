@@ -1,0 +1,402 @@
+
+<body bgcolor="#FFFFF0">
+
+
+<h2>How to Implement Conslists and Other Inductively Defined Data Types</h2>
+
+<p>
+We were fortunate that there is a simple way to implement a conslist
+structure within Java---we used <tt>null</tt> to mimick the
+Nil-structure and <tt>new Cell(...)</tt> to mimick the Cons-structure. 
+But this simple approach won't always work with more
+complex structures, so we require a general strategy:
+
+<p>
+Say that we have an inductive definition of a type, <tt>T</tt>,
+that has <em>n</em> distinct clauses:
+<dl>
+<dd>
+An object is a <tt>T</tt>-object if
+<ul>
+<li>
+it is a <tt>Clause_1</tt> structure, containing ....
+<li>
+it is a <tt>Clause_2</tt> structure, containing ....
+<br>
+  ...
+<li>
+it is a <tt>Clause_n</tt> structure, containing ....
+</ul>
+</dl>
+
+We implement <tt>T</tt>
+in Java as follows:
+<ol>
+<li>
+Write an <tt>abstract class T</tt> that merely names the new data type.
+(We don't build objects from <tt>class T</tt>.)
+<pre>
+public abstract class T
+{ ... }
+</pre>
+<li>
+For each Clause-<em>i</em>  of the inductive type definition,
+write a class, <tt>class Clause_i</tt>, that will be used to
+construct objects of the format defined by  Clause-<em>i</em>:
+<pre>
+public class Clause_i extends T
+{ ...  // private fields that remember the components contained
+       // in a  Clause-<em>i</em> structure
+
+  ...  // methods that return as answers the values in the fields
+}
+</pre>
+It is crucial that <tt>Clause_i extends T</tt>, because this means
+that <tt>new Clause_i(...)</tt> objects belong to data type <tt>T</tt>.
+</ol>
+We want the abstract class to give an overall name to the data type.
+
+<h3>(Re)Implementing ConsLists</h3>
+
+To understand the above methodology, let's reimplement conslists.
+
+<p>
+Recall this definition of the inductive type for conslists:
+<dl>
+<dd>
+An object is a <tt>ConsList</tt>-object if
+<ul>
+<li>
+it is the object, <tt>Nil</tt>; or
+<li>
+it is a structure, <tt>Cons(h, t)</tt>, where <tt>h</tt> is an
+<tt>Object</tt> and <tt>t</tt> is
+another <tt>ConsList</tt>-object.
+</ul>
+</dl>
+Rather than crudely implement this definition with <tt>null</tt>
+and <tt>class Cell</tt>, let's follow the general strategy:
+
+<p>
+We must write three Java classes:
+<pre>
+public abstract class ConsList   // this names the data type
+{ ... }
+
+public class Cons extends ConsList  // this is used to construct Cons-objects
+{ ...holds fields for a  value  part (``h'')  and a  next  part (``t'') ...
+
+  ...holds methods that return the  value (``h'') and  next (``t'') as needed...
+}
+
+public class Nil extends ConsList
+{... }  // holds no fields 
+</pre>
+Here are some Java codings of conslists with these definitions:
+<pre>
+ConsList emptylist = new Nil();
+ConsList clist = new Cons("c", emptylist);
+ConsList alist = new Cons("a", new Cons("b", clist));
+</pre>
+This looks pretty, because we have a distinct name, <tt>ConsList</tt>,
+that denotes all possible forms of conslists.  Also, <tt>new Nil()</tt>
+clearly constructs a 0-sized list.  (Contrast this with
+<tt>null</tt>, which means ``no value at all''.)
+
+<p>
+Here is the first version of our coding of the conslist data structure:
+<pre>
+/** ConsList defines the data type of cons-lists:
+  *   a  Nil  cons-list will be modelled by   new Nil();
+  *   a  Cons cons-list will be modelled by   new Cons(h, t).  */
+public abstract class ConsList {}
+
+
+/** Cons defines a nonempty ConsList, containing a head and a tail.  */
+public class Cons extends ConsList
+{ private Object hd;   // the element saved at the front of the list
+  private ConsList tl; // the remainder of the list
+
+  /** Cons  creates a new list whose front element is  x  and remainder is  y */
+  public Cons(Object x, ConsList y)
+  { hd = x;
+    tl = y;
+  }
+
+  /** head returns the element at the front of this list */
+  public Object head()
+  { return hd; }
+
+  /** tail returns the remainder of the list */
+  public ConsList tail()
+  { return tl; }
+}
+
+
+/** Nil defines an empty ConsList */
+public class Nil extends ConsList
+{
+  public Nil() {}
+}
+</pre>
+The resemblance of <tt>class Cons</tt> to <tt>class Cell</tt> is
+striking.
+
+<p>
+With this version of conslist, the Java coding of the 
+<tt>lengthOf</tt> method looks like this:
+<pre>
+ /** lengthOf calculates the number of cells in a linked list
+    * @param l - the leading cell of the list
+    * @return the length of the linked list  */
+  public int lengthOf(ConsList l)
+  { int length = 0;
+    if ( l instanceof Nil )
+         { length = 0; }
+    else // l instanceof Cons  must be true:
+         { Conslist t = ((Cons)l).tail();  // extract sublist from  l
+           length = 1 + lengthOf(t); }
+    return length;
+  }
+</pre>
+We use Java's built-in <tt>instanceof</tt> operation to ask data structure
+<tt>l</tt> whether it is a Nil-structure.  If it is, the answer is zero;
+if it isn't, we must use a recursion to count the lengthOf the
+sublist that is embedded within <tt>l</tt>.  
+
+<p>
+Within the else-clause of the method,
+notice the casting in this statement:
+<pre>
+ Conslist t = ((Cons)l).tail();  // extract sublist from  l
+</pre>
+These castings are an annoyance, and we can avoid them by
+a clever coding trick in our definition of <tt>class ConsList</tt>.
+We see this later.
+
+
+<h3>Why an abstract class? Why not an interface?</h3>
+We coded <tt>class ConsList</tt> so that it is an <em>abstract class</em>.
+Why did we do this, rather than write
+<tt>public interface ConsList</tt>?
+
+<p>
+Remember these two slogans:
+<ol>
+<li>
+<em>
+An interface defines a connection point so that classes can connect together.
+<li>
+An
+abstract class defines a name for a collection of classes that
+belong in the same family.
+</em>
+</ol>
+We use an interface, like <tt>public interface
+ActionListener</tt> or <tt>public interface Key</tt>,
+to name the methods that a class must have to ``connect'' to another
+class.  The classes that <tt>implement</tt> the interface are unrelated,
+and almost certainly live in different packages.
+
+<p>
+In contrast, an abstract class names a collection of classes
+that belong together with the same ``family name.''  These classes
+definitely live in the same package.
+
+<p>
+The slogans tell us that an abstract class is the
+correct construction for naming an inductively defined data type.
+Also, because we use an abstract class, we can insert, into the abstract
+class itself, codings
+for the some of the methods required of the structures that belong
+to the data type.  (See the next section.)
+
+<h3>Another implementation of <tt>ConsList</tt> that doesn't use casts</h3>
+
+Here is a clever trick that eliminates the use of all casts
+when we work with conslists.  The idea is to provide ``default''
+codings of all the possible operations we require when we work with
+conslists:
+<pre>
+/** ConsList defines the data type of cons-lists:
+  *   a  Nil  cons-list will be modelled by   new Nil();
+  *   a  Cons cons-list will be modelled by   new Cons(h, t).  */
+public abstract class ConsList
+{ /** head returns the element at the front of this list
+    * @return the head element, if it exists
+    * @throw RuntimeException, if the list is empty and has no head  */
+  public Object head()
+  // here is the default coding of this method:
+  { throw new RuntimeException("ConsList: head error"); }
+
+  /** tail returns the remainder of the list 
+    * @return the list's tail, if it exists
+    * @throw RuntimeException, if the list is empty and has no tail */
+  public ConsList tail()
+  // here is the default coding of this method:
+  { throw new RuntimeException("ConsList: tail error"); }
+}
+</pre>
+Now, when we write:
+<pre>
+package ConsList;
+/** Nil defines an empty ConsList */
+public class Nil extends ConsList
+{ public Nil() {} }
+</pre>
+and when we code:
+<pre>
+ConsList emptylist = new Nil();
+</pre>
+This gives the <tt>emptylist</tt>, a <tt>Nil</tt> object,
+two methods, <tt>head</tt> and <tt>tail</tt>.
+It means that we can use them:
+<pre>
+... emptylist.head()...
+</pre>
+Of course, the result is an exception!
+
+<p>
+Now, we cleverly code <tt>class Cons</tt> like this:
+<pre>
+package ConsList;
+/** Cons defines a nonempty ConsList, containing a head and a tail.  */
+public class Cons extends ConsList
+{ private Object hd;   // the element saved at the front of the list
+  private ConsList tl; // the remainder of the list
+
+  /** Cons  creates a new list whose front element is  x  and remainder is  y */
+  public Cons(Object x, ConsList y)
+  { hd = x;
+    tl = y;
+  }
+
+  public Object head()
+  { return hd; }
+
+  public ConsList tail()
+  { return tl; }
+}
+</pre>
+Notice that we write new versions of <tt>head</tt> and <tt>tail</tt>.
+(This is called <em>overriding</em> the old definitions by the new ones.)
+Thus, when we code:
+<pre>
+ConsList alist = new Cons("a", emptylist);
+</pre>
+we can also do
+<pre>
+...alist.head()...
+</pre>
+to extract the object held in <tt>alist</tt>.
+
+<p>
+Here is the revised coding of <tt>lengthOf</tt>:
+<pre>
+  /** lengthOf calculates the number of cells in a linked list
+    * @param l - the leading cell of the list
+    * @return the length of the linked list  */
+  public int lengthOf(ConsList l)
+  { int length = 0;
+    if ( l instanceof Nil )
+         { length = 0; }
+    else // l instanceof Cons  must be true:
+         { length = 1 + lengthOf(l.tail()); }
+    return length;
+  }
+</pre>
+The cast is no longer needed to make the Java compiler happy.
+
+<p>
+Here are two more examples of methods:
+<pre>
+public String toString(ConsList l)
+{ String answer;
+  if ( l instanceof Nil )
+       { answer = ""; }
+  else { answer = l.head().toString() + " " + toString(l.tail()); }
+  return answer;
+}
+</pre>
+
+<pre>
+public ConsList append(ConsList list1, ConsList list2)
+{ ConsList answer;
+  if ( list1 instanceof Nil )
+       { answer = list2; }
+  else { answer = new Cons(list1.head(),
+                           append(list1.tail(), list2));
+       }
+  return answer;
+}
+</pre>
+
+With these techniques in hand, we are ready to do serious programming
+with recursively defined data structures.
+
+<p>
+<hr>
+<p>
+
+<h4>
+<a href="ConsListExample.html">A package that holds the implementation of conslists</a>
+</h4>
+
+<h4>Example application:
+<a href="ConsListExample/Set.html">an implementation of sets using ConsLists</a>
+</h4>
+
+
+
+<!--
+<h3>A variety of possible implementations of a conslist</h3>
+
+<p>
+There are four variations of using an abstract type for implementing
+ConsLists.  We will use Version 3, because it is simple to understand
+and easy to use.
+
+<ol>
+<li>
+<b><a href="ConsListEx/ConsList1">
+Version that uses an empty abstract class
+for <tt>ConsList</tt></a></b>   This is simple, but it requires that we
+use casts when processing conslists.
+<p>
+
+<li>
+<b><a href="ConsListEx/ConsList2">
+Version that uses the
+Composite Design Pattern</a> to demand that both
+Nil- and Cons-structures have the same set of methods.</b>
+This version reduces the casts we must use when we process lists.
+<p>
+
+<li>
+<b><a href="ConsListEx/ConsList">
+Version like the previous</a>, but supplies ``default'' methods
+that can be overriden</b>.   This version reduces the amount of coding
+one does when there are many possible forms of value of  the data type.
+<em>We will use this version for future programming exercises. </em>
+<p>
+
+<li>
+<b><a href="ConsListEx/ConsList4">
+Version based on Visitor Design Pattern</a></b>  This version is
+sometimes used by professionals who process the data type in many
+distinct ways.  (We won't develop this variant in this course.)
+<p>
+
+<li>
+<b><a href="ConsListEx/ConsList0">
+The original implementation of lists using <tt>null</tt> and
+<tt>class Cell</tt></a></b>, given here for purposes of comparison---you
+can see how using <tt>null</tt> lets us avoid some casts that appear
+in some of the simpler implementation techniques above.
+</ol>
+When you study each of these versions (it is OK to skip Version 4),
+study carefully the methods that process the conslist values.
+
+-->
+
+</body>

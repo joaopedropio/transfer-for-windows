@@ -1,0 +1,449 @@
+
+<body bgcolor="#FFFFF0">
+
+<h1>Graphs</h1>
+
+A road map is an example of a <em>graph</em>.
+So is a circuit diagram, a hardware diagram, a flowchart,
+a UML class diagram, a work-flow chart, and a structure diagram of a
+database system.   Graphs are common, and it is important to know how
+to model them and process them within a computer.
+
+<h4>Definition of a graph</h4>
+
+<p>
+Precisely stated, a <em>(directed) graph</em> is
+<ol>
+<li>
+a set, <em>N</em>, of <em>nodes</em>
+<li>
+a set, <em>E</em>, of pairs of elements from <em>N</em>, called <em>edges</em>.
+</ol>
+For example, this picture of part of the flight plan of American Airlines,
+<pre>
+<img src="GraphFigs/graph0.gif">
+</pre>
+can be written precisely as the graph,
+<pre>
+N = { KC, Chi, Dal, NYC }
+E = { (Dal,KC), (KC,Chi), (Chi,KC), (Chi,Dal), (Dal,Chi), (Chi,NYC)}
+</pre>
+Each edge has a <em>source</em> and a <em>target</em>
+(In the example,
+there is an edge whose source is Chi and whose destination is NYC,
+but there is no edge whose source is NYC.  It is legal to have
+an edge whose source and destination are the same node.)
+
+<p>
+A <em>path</em> from a node A to node B is a sequence of zero or more
+edges that start at A, connect together, and end at B.  In the example, there is a path
+from Dal to NYC but there is no path from NYC to Dal.
+
+<p>
+Notice that a tree is a special form of graph, where one node is
+called the <em>root</em>, and there is exactly one path from the
+root to all the other nodes. Unlike a tree, a graph can have multiple
+paths between nodes, and a graph can have
+<em>cycles</em> (loops), where a path can go from a starting
+node to other nodes and back to the starting node again.
+
+
+<p>
+Another form of graph is an <em>undirected graph</em>, where
+every edge from a node A to node B is read also as an edge from
+B to A.  We draw an undirected graph without arrowheads on the
+edges, like this:
+<pre>
+<img src="GraphFigs/graph1.gif">
+</pre>
+
+<p>
+A graph is a <em>weighted graph</em> if some form of label or value
+(called a ``weight'')
+is attached to each of its edges.  For example, mileages might be attached
+to the directed graph seen first,
+<pre>
+<img src="GraphFigs/graph0w.gif">
+</pre>
+The formal representation displays each edge as a triple:
+<pre>
+N = { KC, Chi, Dal, NYC }
+E = { (Dal,600,KC), (KC,500,Chi), (Chi,500,KC), (Chi,800,Dal), (Dal,800,Chi), (Chi,900,NYC)}
+</pre>
+
+<h4>Representing graphs in a computer</h4>
+
+<p>
+There are two standard ways of storing graphs in a computer:
+the <em>adjacency matrix</em> and the <em>adjacency list</em>.
+
+<p>
+An adjacency matrix is a kind of ``mileage table'':
+<pre>
+        Chi  Dal  KC  NYC
+       +-----------------
+Chi    |  0  800  500 900
+       |
+Dal    |800    0  600  -1
+       |
+KC     |500   -1    0  -1
+       |
+NYC    | -1   -1   -1   0
+</pre>
+Here, the weights indicate the existence of an edge, and -1 (and 0!)
+means there
+is no edge.
+
+<p>
+The adjacency list organizes the graph's edges into sets, based on the
+edges' sources.  Here is the adjacency list for the example:
+<pre>
+<img src="GraphFigs/adj.gif">
+</pre>
+
+<p>
+As a rule, use an adjacency matrix to store a graph where there are
+edges between almost all the nodes; use an adjacency list when
+the graph has few edges, that is, it is <em>sparse</em>,
+that is, there are fewer than <em>N * log<sub>2</sub> N</em> edges, for
+a graph with <em>N</em> nodes.
+
+<p>
+The adjacency matrix and adjacency list are ``raw'' forms of graph
+and are not oriented towards solving any particular problem.
+The forms of problems that one must solve are typically:
+<ul>
+<li>
+process/print the nodes, e.g., 
+check if the graph is <em>connected</em> --- for every node, one can go
+to all other nodes
+<li>
+process/print the edges, e.g.,
+find the shortest, weighted path
+from one node to another
+</ul>
+
+The best way to solve such problems is to extract information from
+the adjacency matrix/list and construct an appropriate tree.
+There are two important trees built from graphs:
+<em>spanning trees</em> and <em>regular trees</em>.
+
+<h4>Spanning trees</h4>
+
+<p>
+A spanning tree is a tree that lists all the nodes in a graph but
+not necessarily all the edges.  Its root is the ``entry node''
+into the graph.
+Here are spanning trees that we can generate from the
+example directed graph where we use Dal as the entry node.  For simplicity,
+we omit the weights on the edges, since spanning trees are normally
+used to answer questions about the nodes.  
+<pre>
+<img src="GraphFigs/spanDal.gif">
+</pre>
+and here is a spanning tree for entry node, NYC:
+<pre>
+<img src="GraphFigs/spanNYC.gif">
+</pre>
+Spanning trees are good for answering questions/do processing of
+the nodes in a graph, where the edges are unimportant to the answer.
+For example, we can use a spanning tree to answer:
+Is there a path from one node to another?
+Is one node connected to all others?
+
+<h4>Regular trees</h4>
+
+<p>
+A regular tree is a tree that generates all the paths that can be taken
+starting from an entry node, where along every path, no node repeats.
+Here is the regular tree that generates all paths from entry node, KC:
+<pre>
+<img src="GraphFigs/reg.gif">
+</pre>
+The point is, when we reach a node that repeats in a path, it is the
+same as a backwards arc --- a loop:
+<pre>
+<img src="GraphFigs/reg2.gif">
+</pre>
+Here is the regular tree that generates all paths from entry node,
+Chi:
+<pre>
+<img src="GraphFigs/reg3.gif">
+</pre>
+Regular trees are built to answer questions/do processing of the
+paths in a graph, where the edges and weights are important to the answer.
+For example, we can use a regular tree to answer: list all the paths
+from one node to another; find the shortest (weighted) path from one
+node to another.
+
+<p>
+We now examine two standard and classic graph problems and
+show how to use the trees to solve them.
+
+<h3>Application: modelling sets by spanning trees --- UNION-FIND</h3>
+
+For simplicity, we work with undirected graphs in this section.
+
+<p>
+A collection of graph nodes is <em>connected</em> if for every node in
+the collection, there
+is a path to every other node in the collection.  For this (undirected) graph:
+<pre>
+<img src="GraphFigs/spanW.gif">
+</pre>
+There are two connected collections: <tt>{Tokyo, Osaka, Seoul}</tt>
+and <tt>{KC, Dal, Chi, NYC}</tt>.
+
+<p>
+The collections are disjoint ``sets,'' and such sets play a crucial role
+in answering questions of the form: ``Is there a path from node A to node B?''
+or ``Do A and B belong to the same set?''
+To answer the question, we check if A and B are in the same
+connected collection.
+
+<p>
+To answer
+such questions, it is useful to maintain
+spanning trees that include all the nodes of the graph.  For the example,
+two spanning trees are required, one for each ``set'':
+<pre>
+<img src="GraphFigs/spanW1.gif">
+</pre>
+Now, to answer the question, ``can we go from A to B?'', we check
+if nodes A and B have the same root in the spanning tree(s) where
+they are saved.  For example, we can check
+``Can we go from Dal to NYC?'' by finding Dal and NYC and confirming
+that they share the same root, KC.
+
+<p>
+Another view is that each set is named by the root of its spanning
+tree --- in the example, we have the Tokyo set and the KC set.
+Then, the questions just asked are set-membership questions:
+``Is Dal in the KC-set''?
+
+<p>
+The previous checks of ``connectivity'' take time <em>O(log<sub>2</sub>N)</em>,
+where <em>N</em> is the number of nodes in the graph (assuming that
+we can locate the source and destination nodes in fixed time,
+which we can do if we save the addresses of all the spanning-tree
+nodes in a hash table or spelling tree).
+
+<p>
+The operation is called a FIND operation.  There is also
+a UNION operation, which corresponds to unioning together
+two sets:
+
+<p>
+Say that flights are added between Chi and Osaka, that is,
+an edge has been added between these two nodes.  How can we efficiently
+combine the spanning trees to reflect the new graph edge?
+
+<p>
+There is a simple solution to updating the spanning trees:
+draw a line between Chi's root and Osaka's:
+<pre>
+<img src="GraphFigs/spanW2.gif">
+</pre>
+This does a ``union'' of the two ``sets'' and is called a UNION operation.
+
+<p>
+One drawback of the simple definition of UNION is that it can create
+unbalanced spanning trees --- the above tree is not height-balanced.  
+One way to improve UNION is to link the spanning tree with fewer nodes
+to the one with more nodes.  For the above example, this would
+cause Tokyo's tree to link to KC's, which gives a slightly better
+balance.
+
+<p>
+But we can do better:
+the FIND operation is often
+improved so that it rebalances a spanning tree after
+it finds a path from a node in the spanning tree to its root ---
+each time a FIND operation is performed, all the nodes traversed 
+on the path to the root are attached directly to the root.
+For the above example, a FIND operation on NYC would cause both
+NYC and Chi to be relinked directly to the root, Tokyo:
+<pre>
+         Tokyo
+  /     /   |   \    \
+Seoul Osaka KC  Chi  NYC
+            |
+            Dal
+</pre>
+
+<h3>Application: finding the shortest path --- Dijkstra's algorithm</h3>
+
+Consider again this directed, weighted graph:
+<pre>
+<img src="GraphFigs/graph0w.gif">
+</pre>
+A classic question that we might ask is: What is the shortest path
+(in terms of the weights) from one node to another?
+For example, what is the shortest path from Dal to NYC?
+
+<p>
+A naive solution would enumerate all possible paths from Dal to NYC,
+say by using a stack and depth-first search, starting from
+``root node'' Dal.  But there is a smarter, faster solution,
+due to Dijkstra, which constructs a regular tree that enumerates only
+the ``short'' paths.
+
+<p>
+The key idea behind Dijkstra's algorithm is:
+generate a regular tree whose root is the start node; generate all
+possible paths from the root, but stop a path if either
+<ol>
+<li>
+the next node in the path is one that has already appeared in the
+path (this signifies the path has entered a loop and is not the shortest
+solution;
+it is the usual criterion for stopping a path
+in a regular tree)
+<li>
+the next node is the destination node (and so we calculate the weight
+of the path from the root to the destination and see if it is the
+least we have seen so far)
+<li>
+the next node is a node that we have already reached 
+<em>in some other path in the tree</em> and the weight of the other
+path is already less-than-or-equal-to the weight of the path
+we are just now constructing --- this means the path we are just now
+constructing cannot be the shortest path
+</ol>
+To help calculate the weights of the paths, we will annotate
+each node of the regular tree with the weight of the path from the
+root to that node.  To remember each shortest path
+so far from the root to any given node, we will keep an array to
+remember the weights.
+
+<p>
+Here is an example --- say we want the shortest path
+from Dal to NYC in the graph just seen.  We begin with this
+this array and initial regular tree:
+<pre>
+           Dal  Chi   KC  NYC
+          +----+----+----+----+
+shortest: |   0|   ?|   ?|   ?|
+          +----+----+----+----+
+</pre>
+<pre>
+<img src="GraphFigs/sh0.gif">
+</pre>
+
+<p>
+The array notes that the shortest path from Dal to Dal is 0;
+the other distances are undetermined at this time.
+
+<p>
+The edges from Dal generate this slightly larger regular tree
+and update the array to read
+<pre>
+           Dal  Chi   KC  NYC
+          +----+----+----+----+
+shortest: |   0| 800| 600|   ?|
+          +----+----+----+----+
+</pre>
+<pre>
+<img src="GraphFigs/sh1.gif">
+</pre>
+Now, we must develop the tree at the nodes KC and Chi.
+When we try to develop KC, we find an edge that leads to Chi:
+<pre>
+<img src="GraphFigs/sh2.gif">
+</pre>
+But when we calculate the weight of the path from Dal to KC to Chi,
+we find that it is already larger than the weight already stored in
+the array as the shortest known weight from Dal to Chi.  This means
+there is no need to develop this path further, and we stop:
+<pre>
+<img src="GraphFigs/sh3.gif">
+</pre>
+
+<p>
+When we develop Chi, we find three edges: the first, to KC is to a node
+that has been seen before.   The array tells us that the path found earlier to
+KC had weight 600, so the current path,
+which has weight 800+500 = 1300, is not least and can be terminated.
+The next edge leads to
+to Dal and
+a repeat of a node already seen on this path, so there is no way that
+this path can be shortest; we terminate this path.  The third
+edge goes from Chi to NYC, and we update the array with our discovery:
+<pre>
+           Dal  Chi   KC  NYC
+          +----+----+----+----+
+shortest: |   0| 800| 600|1700|
+          +----+----+----+----+
+</pre>
+<pre>
+<img src="GraphFigs/sh4.gif">
+</pre>
+The path from Dal to NYC is complete, and we stop this path.
+
+<p>
+At this point, all paths in the regular tree are completely developed,
+and we quit --- the shortest path goes from Dal to Chi to NYC.
+
+
+<p>
+Finally, we note that, in the previous example, the regular tree itself
+need not be explicitly constructed in computer storage.  Instead,
+we keep a second array that remembers the edges that yielded the shortest path.
+Here is the example repeated, with the two arrays, one that remembers the
+weights and one that remembers the individual edges in the
+shortest path that we build:
+<pre>
+           Dal  Chi   KC  NYC
+          +----+----+----+----+
+shortest: |   0|   ?|   ?|   ?|
+          +----+----+----+----+
+
+	  Dal  Chi   KC  NYC
+	 +----+----+----+----+
+previous:|null|   ?|   ?|   ?|
+	 +----+----+----+----+
+</pre>
+After the moves from Dal:
+<pre>
+           Dal  Chi   KC  NYC
+	  +----+----+----+----+
+shortest: |   0| 800| 600|   ?|
+          +----+----+----+----+
+
+	   Dal  Chi   KC  NYC
+          +----+----+----+----+
+previous: |null| Dal| Dal|   ?|
+          +----+----+----+----+
+</pre>
+For city <tt>C</tt>,  <tt>previous[C]</tt> remembers the immediate
+predecessor node
+whose edge delivers us to city <tt>C</tt> on the shortest path.
+For example,  <tt>previous[KC]</tt> tells us that the shortest
+known path from Dal to KC ends with an edge from Dal to KC, and
+<tt>shortest[KC]</tt> tells us that the weight of the shortest
+path from Dal to KC is 600.
+
+<p>
+After the attempted moves from KC, there are no change to the arrays.
+The move from Chi to NYC gives the answer and the last edge in the
+shortest path:
+<pre>
+           Dal  Chi   KC  NYC
+	  +----+----+----+----+
+shortest: |   0| 800| 600|1700|
+          +----+----+----+----+
+
+	   Dal  Chi   KC  NYC
+          +----+----+----+----+
+previous: |null| Dal| Dal| Chi|
+          +----+----+----+----+
+</pre>
+Now, we see that the shortest path from Dal to NYC must end with the
+edge from  <tt>previous[NYC]</tt> to NYC, that is, from Chi to NYC.
+And, we see that the shortest path from Dal to Chi must end with the
+edge, <tt>previous[Chi]</tt> to Chi.
+
+<p>
+Indeed, we can assemble the path from the edges,
+listed in reverse:  NYC-Chi-Dal (null).
+</body>

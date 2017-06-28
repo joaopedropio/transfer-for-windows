@@ -1,0 +1,286 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Priority Queues and Heaps</h2>
+
+
+<h4>Priority queues</h4>
+
+At the post office, express mail is processed and delivered before
+regular mail, because express mail's priority is higher.  In a
+similar way, an operating system will let a high-priority user
+control a printer or a processor chip before a low-priority user.
+A data structure, called a <em>priority queue</em>, is used to
+manage such resource usage.
+
+<p>
+A priority queue is a data structure that is meant to hold objects
+that require ``service'' (e.g., use of a printer).  The essential
+operations are:
+<ul>
+<li>
+<em>insert(priority_num, ob)</em>, which adds <em>ob</em> to the
+structure, paired with an integer priority number.  (The tradition
+is that the lower the priority number, the quicker the object will be
+serviced.)
+<li>
+<em>retrieve()</em>, which removes and returns the object in the queue
+that has the lowest priority number.  (If multiple objects have the
+lowest number, any one of the objects may be returned.)
+</ul>
+
+<p>
+Here is an example, where string objects are inserted with priority numbers: 
+<pre>
+insert(8, "abc")
+insert(3, "def")
+insert(4, "ghi")
+retrieve()  ("def" is returned)
+insert(2, "jkl")
+retrieve()  ("jkl" is returned)
+insert(4, "mno")
+retrieve() ("ghi" is returned)
+retrieve() ("mno" is returned)
+</pre>
+At this point, the priority queue still holds <tt>"abc"</tt>,
+whose low priority has prevented it from leaving. 
+
+
+<p>
+As usual, we require an implementation of a priority queue where insertion
+and retrieval take time that is less than linear, in terms of the number
+of objects held in the queue.  Since there is an implicit ordering
+involved with insertion, we might try writing some variant of
+a traditional queue that sorts its elements on insertions.  Alas, this
+will produce greater than linear-time behavior.  Since the priority
+numbers are not sequences of symbols, the spelling-tree technique is
+not suited for the job.  We require a new approach.
+
+<h3>Heaps</h3>
+
+A <em>heap</em> is a <em>complete binary tree</em> that possesses the
+<em>heap-order</em> property.
+
+<p>
+A binary tree is <em>complete</em> if
+<ol>
+<li>
+all paths in the tree have length within one of the length of the
+longest path.
+<li>
+all paths that have lengths less than the longest path's length
+are rightmost within the tree.
+</ol>
+Here are two examples of complete binary trees:
+<pre>
+                  a                    c
+                /   \                /   \
+               b     c              b     a
+              / \   / \            / \   / \
+             d  e  f   .          d   .  .  .
+            /\ /\ /\             / \
+           . . .. . .           .   .
+</pre>
+Note that the shortest paths in the trees are the ones on the trees' right.
+In contrast, these trees are not complete:
+<pre>
+                  a                    c
+                /   \                /   \
+               b     c              b     a
+              / \   / \            / \   / \
+             d  e  f   .          .   .  d  .
+            /\ /\ /\                    / \
+           . g .. . .                  .   .
+            /\
+           . .
+</pre>
+You can consider a complete tree as a tree where insertions must be
+added in a fixed, left-to-right order, much like laying bricks:
+<pre>
+                  1         
+                /   \      
+               2     3    
+              / \   / \  
+             4  5  6   * 
+            /\ /\ /\    
+           + . .. . . 
+</pre>
+The leaf marked by the asterisk is the position for the next insertion,
+the leaf marked by the plus symbol is the position after that, etc.
+
+
+<p>
+Next, a complete binary tree has the <em>heap-order</em> property if,
+for every node, <tt>N</tt>, within the tree,  the priority number of the value
+held within node <tt>N</tt> is less-than-or-equals all priority numbers held
+within  <tt>N.left()</tt> 
+and all priority numbers held within  <tt>N.right()</tt>.
+
+<p>
+Here is an example of a complete tree with the heap-order property,
+where each node holds a priority number, object pair.
+<pre>
+                   2,r
+                /       \
+               7,m      3,q
+              /  \      /  \
+            9,p  12,k  6,w   .
+            /\   /\    /\
+           . .   ..   . .
+</pre>
+Check each node---the number at a node is less-or-equals to all the
+numbers ``below'' it in the tree.   <em>This means the smallest number
+must be at the root.</em>
+
+<p>
+Although this tree is heap-ordered, it is not an ordered tree (binary search
+tree) ---
+note where 3 is positioned, say, relative to  2 and 7.
+This fact will be exploited to devise a fast algorithm for insertion.
+
+
+<h4>Insertion into a heap</h4>
+
+Insertion must add a new priority number, object pair to the heap
+in such a way that the resulting structure is still a heap---it is
+complete and heap-ordered.
+The algorithm is simple and clever:
+<p>
+To insert  <tt>num, ob</tt>  into heap, <tt>h</tt>:
+<ol>
+<li>
+Place <tt>num, ob</tt>  in a new node that replaces the leftmost leaf
+nearest the root of <tt>h</tt>.
+(This inserts
+<tt>num, ob</tt>  into the first leaf encountered when ``reading'' the tree
+left-to-right, top-down.  See the earlier drawings.)
+<li>
+Next, make the new node with <tt>num, ob</tt>
+``bubble up'' in the tree
+by repeatedly swapping the node with its parent, when the
+parent's priority number is greater than <tt>num</tt>.
+</ol>
+Here is an example: Say that we perform  <tt>insert(1,s)</tt> into the
+heap drawn above.   After Step 1 of the algorithm, we have this tree:
+<pre>
+                   2,r
+                /       \
+               7,m      3,q
+              /  \      /  \
+            9,p  12,k  6,w  1,s
+            /\   /\    /\   /\
+           . .   ..   . .  .  .
+</pre>
+This is a complete tree but is not heap-ordered.  To restore the latter
+property, we must make  <tt>1,s</tt> ``bubble up'' to its appropriate
+position.  First, we note that  <tt>1</tt> is less than <tt>3</tt>,
+the priority number of the new node's parent, so we exchange nodes:
+<pre>
+                   2,r
+                /       \
+               7,m      1,s
+              /  \      /  \
+            9,p  12,k  6,w  3,q
+            /\   /\    /\   /\
+           . .   ..   . .  .  .
+</pre>
+An examination of the new parent to  <tt>1,s</tt> shows that another
+exchange is warranted, giving us:
+<pre>
+                   1,s
+                /       \
+               7,m      2,r
+              /  \      /  \
+            9,p  12,k  6,w  3,q
+            /\   /\    /\   /\
+           . .   ..   . .  .  .
+</pre>
+At this point, the tree is heap-ordered.
+
+<h4>Retrieval from a heap</h4>
+
+A retrieval operation always returns the object in the root node
+and deletes the root of the heap-ordered tree.
+But this leaves two trees, which must be rebuilt into one heap.
+Here is the algorithm for retrieval:
+
+<p>
+If the heap is empty, this is an error.  Otherwise:
+<ol>
+<li>
+Extract the object in the root and save it; call it <tt>ob_root</tt>.
+<li>
+Move to the root the rightmost node that is furthest from the original root.
+(This rebuilds the tree so that it is again complete.)
+<li>
+Say that
+<tt>num, ob</tt> now reside at the root.  Make this node
+``bubble down'' the tree
+by repeatedly swapping it with a child whose priority number is less than
+<tt>num</tt>.  If both children have priority numbers that
+are less than <tt>num</tt>, then swap the node with the smaller-valued
+child.
+<li>
+Return <tt>ob_root</tt> as the result.
+</ol>
+Here is an example: Given the tree just drawn, say that a retrieval must
+be done.  Step 1 says that we extract object <tt>s</tt> and save it.
+Step 2 says to replace the root with the node that is furthest and rightmost
+from the root.  This gives us:
+<pre>
+                   3,q
+                /       \
+               7,m      2,r
+              /  \      /  \
+            9,p  12,k  6,w  .
+            /\   /\    /\  
+           . .   ..   . . 
+</pre>
+Step 3 says that <tt>3,q</tt> must be exchanged with its children,
+as necessary, to restore heap-ordering.  Here,  <tt>3,q</tt> is
+exchanged with  <tt> 2,r</tt>, giving us:
+<pre>
+                   2,r
+                /       \
+               7,m      3,q
+              /  \      /  \
+            9,p  12,k  6,w  .
+            /\   /\    /\   
+           . .   ..   . . 
+</pre>
+Only one exchange is needed.  <tt>s</tt> is returned.
+
+<h4>Time complexity</h4>
+
+The insertion and retrieval operations each take
+time of the order,  <tt>log<sub>2</sub>N</tt>, where the heap contains
+<tt>N</tt> nodes.   This is because only one path of the heap is traversed
+during the ``bubble up'' and ``bubble down'' operations.
+
+<p>
+The challenging aspect of implementing a heap structure lies in
+remembering which node is the deepest, rightmost, and which leaf is
+the shallowest, leftmost.   Both of these notions are tied to
+the count of objects held in the heap:  If we number the positions
+of the heap in binary numbering,
+<pre>
+<img src="tree1.gif">
+</pre>
+then the shallowest, leftmost leaf is the position that is one plus
+the count of objects in the heap, and the deepest, rightmost node
+is located at the position that is exactly the same as the count of
+objects in the heap.
+
+<p>
+Since each binary numeral indicates a path from the root of the heap
+to the position numbered by it,
+<pre>
+<img src="tree2.gif">
+</pre>
+we can easily locate the leftmost leaf and rightmost node with
+simple binary arithmetic, where the calculation of the binary numeral
+and the path traversal based on the numeral both take
+on the order
+of <tt>log<sub>2</sub>N</tt> time.
+</body>
+

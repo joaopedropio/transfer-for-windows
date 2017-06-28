@@ -1,0 +1,781 @@
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+<h1>Stacks</h1>
+
+<p>
+After the array, perhaps the most important
+data structure is the <em>stack</em>.  A stack structure restricts
+dramatically how elements are inserted, retrieved, and removed:
+The most recently inserted element in the stack is the only one that
+can be retrieved or removed. 
+(Thus, if you wish to retrieve an element inserted 
+long ago, you must first remove <em>all</em> the elements that were inserted
+after the desired one.)
+This strategy of removal and retrieval
+is sometimes called, ``last in, first out.''
+
+<p>
+A good real-life
+example of a stack is the pile of dinner plates that you encounter when you eat
+at the local cafeteria:  When you remove a plate from the pile,
+you take the plate on the top of the pile. 
+But this is exactly the plate that was added (``inserted'') most recently to
+the pile by the dishwasher.  If you want the plate at the bottom of the pile,
+you must remove all the plates on top of it to reach it.
+Another, sadder, example of a stack is the slogan, ``last hired,
+first fired,'' which is typically utilized when a company reduces its
+work force.   
+
+<p>
+Many computer algorithms work best with stacks --- stacks are used for
+<ol>
+<li>
+remembering partially completed tasks, and
+<li>
+undoing (backtracking from) an action.
+</ol>
+An example of 1. is described in the next section, where subexpressions
+of an arithmetic expression are remembered for later computation.
+Another example is presented in the next lecture, where we see how the
+Java Virtual Machine uses a stack to remember all of a program's
+methods that have been called but are
+not yet finished.
+
+<p>
+An example of 2. is the ``undo'' button on most text editors, which
+lets a person undo a typing error, or the ``back'' button on a web browser,
+which lets a user backtrack to a previous web page.  Another example
+is a searching algorithm, which searches a maze and keeps a history
+of its moves in a stack.  If the algorithm makes a false (bad) move,
+the move can be undone by retrieving the previous position from the stack.
+
+<h3>Example: Arithmetic expression evaluation</h3>
+
+<p>
+We begin with a
+famous example that uses a stack to remember partially completed
+computational tasks: Evaluating an arithmetic expression written in postfix
+notation (``Lukasiewicz notation''). 
+
+<p>
+Postfix notation is an parenthesis-free way of writing arithmetic expressions,
+where one
+places the
+operator symbol <em>after</em>
+the operator's two operands.  For example, the addition of 3 to 2 is
+written <tt>3 2 +</tt>, and the multiplication of the result by 4 is
+written
+<tt>3 2 + 4 *</tt>.  Remarkably, <em>parentheses are never needed</em>.
+An example like
+<pre>
+((3 + 2) * 4) / (5 - 1)
+</pre>
+is written
+<pre>
+3 2 + 4 * 5 1 - /
+</pre>
+To see why parentheses are unnecessary, let's manually compute the expression:
+<pre>
+3 2 + 4 * 5 1 - /
+=>   5 4 * 5 1 - /
+=>  20 5 1 - /
+=>  20 4 /
+=> 5
+</pre>
+We see that an operator evaluates with the two operands that immediately
+precede it.  This explains why
+the division operator is written
+last in the original expression,
+because the division is performed only after all the other
+subexpressions are evaluated.
+
+<p>
+Postfix arithmetic is more than an interesting oddity --- <em>it is the
+standard format for writing arithmetic expressions that must be 
+executed by a CPU</em>.   Recall that the CPU's arithmetic-logic unit
+works with the CPU's registers to do arithmetic.   A CPU cannot
+compute the result of the expression,
+<tt>((3 + 2) * 4) / (5 - 1)</tt>, but it <em>can</em>
+compute the result of
+<tt>3 2 + 4 * 5 1 - /</tt>, because the operands and operators are
+now arranged in the correct order for loading numbers into registers
+and doing the operations.  Here is an assembly code sequence
+that tells the CPU how to compute
+the postfix expression:
+<pre>
+loadconst R1 3   // load Register 1 with constant 3
+loadconst R2 2   // load Register 2 with constant 2
+add R2 R1        // add Register 1 to Register 2
+loadconst R1 4   // etc.
+multiply  R2 R1
+loadconst R1 5
+loadconst R3 1
+subtract R1 R3
+divide R2 R1
+</pre>
+The register names, R1, R2, R3, are a bit distracting ---
+notice the pattern hidden in the instructions (erase the register
+names):
+<pre>
+loadconst 3
+loadconst 2
+add
+loadconst 4
+multiply
+loadconst 5
+loadconst 1
+subtract
+divide
+</pre>
+It is exactly the postfix expression!  Indeed, the simplified 
+version of the assembly code is called <em>stack code</em> or
+<em>byte code</em>,
+and it is in fact the format of code embedded in the .class files
+constructed by the Java compiler.
+
+<h4>The Java compiler translates programs into posfix notation</h4>
+
+<p>
+Because postfix format is ideal for computation with a CPU,
+the Java compiler not only checks the grammar of your Java program, it also
+translates the program into postfix format --- even
+the assignments, conditionals, and loops are reformatted into postfix
+format.   If you write a program like this:
+<pre>
+...
+x = x + 1;
+if ( x > 2 ) 
+   { y = 2 * ( x - 3 ); }
+...
+</pre>
+the Java compiler produces the postfix-reformatted
+version:
+<pre>
+...
+x 1 + =x ; 
+x 2 > if
+    2 x 3 - * =y ;
+...
+</pre>
+and then writes the byte code (stack code) for the postfix version into the
+program's .class file:
+<pre>
+...
+load x
+loadconst 1
+add
+storeinto x
+load x
+loadconst 2
+greaterthan
+test_and_jump_if_false_to LabelA
+loadconst 2
+load x
+loadconst 3
+subtract
+multiply
+storeinto y
+LabelA: ...
+</pre>
+
+<p>
+The example leaves us with two fundamental questions:
+<ul>
+<li>
+How does the Java Virtual Machine execute the byte code?
+<li>
+How does the Java compiler convert a Java program into postfix format (byte
+code)?
+</ul>
+Both questions are answered with the assistance of the stack data structure.
+
+<h3>The Java Virtual Machine uses a stack</h3>
+
+A stack is the ideal data structure for evaluating an
+arithmetic expression
+written in postfix notation.
+
+<p>
+Recall again that the postfix version of
+<tt>((3 + 2) * 4) / (5 - 1) </tt>
+is
+<pre>
+3 2 + 4 * 5 1 - /
+</pre>
+Figure 2 illustrates how we might use a stack to compute
+the result of this expression --- <em>
+the stack holds
+the results of subexpressions that are awaiting further computation</em>. 
+
+<p>
+In the Figure below,
+the stack is drawn as if it were a stack of
+dinner plates---it grows vertically.  The arithmetic expression shrinks
+horizontally as it is read and computed.
+
+<pre>FIGURE 2: postfix expression evaluation with a stack data structure========
+
+ Stack    Expression
+
+|   |
+ ---        3 2 + 4 * 5 1 - /
+(empty)
+
+| 3 |       2 + 4 * 5 1 - /
+ ---
+
+| 2 |      
+| 3 |       + 4 * 5 1 - /
+ ---
+
+| 5 |       4 * 5 1 - /
+ ---
+
+| 4 |
+| 5 |       * 5 1 - /
+ ---
+
+| 20|       5 1 - /
+ ---
+
+| 5 |
+| 20|       1 - /
+ ---
+
+| 1 |
+| 5 |
+| 20|       - /
+ ---
+
+| 4 |
+| 20|       /
+ ---
+
+| 5 |      (finished)
+ ---
+
+ENDFIGURE===============================================================</pre>
+
+The symbols of the input expression are read, one by one; numerals are
+inserted onto the ``top'' of the stack; and operators retrieve
+the top two numerals from the
+stack, perform the operation, and insert the result onto the stack.
+
+<p>
+This is simple and mechanical,
+and it is easy to write a computer algorithm
+that does the steps:
+<pre>
+begin with an empty stack and an input stream.
+while there is more input to read, do:
+   read the next input symbol;
+   if it's a numeral, 
+      then push it onto the stack;
+   if it's an operator
+      then pop two numerals from the stack;
+           perform the operation on the numerals;
+	   push the result;
+end while;
+// the answer of the expression is waiting for you in the stack:
+pop the answer;
+</pre>
+
+<p>
+Indeed, the algorithm sketched above
+<em>forms the heart of the
+Java Virtual Machine</em>, which ``reads'' and ``executes'' your Java program.
+
+<p>
+Recall that
+the Java Virtual Machine (JVM) is itself a computer program, whose job
+is to read byte code and do the instructions.
+As we saw in the previous section, both Java statements as well as expressions
+are translated by the Java compiler into byte code.
+The JVM reads the byte code instructions, and uses a stack, just like
+the one we used in the arithmetic example, to compute the results of
+arithmetic expressions.  The stack is sometimes called the
+<em>temporary-value stack</em>, because the subresults of arithmetic
+expressions are ``temporary'' and the final result is popped and stored
+into some variable's storage cell.
+
+<p>
+The algorithm for the JVM looks something like this:
+<pre>
+begin with an empty stack and the byte code.
+while there is more byte code to read, do:
+   read the next byte-code instruction;
+      if it's  loadconst n,
+            then push n onto the stack;
+      if it's  load x,
+            then look up x's value in storage and push it onto the stack;
+      if it's an operator
+	    then pop two numerals from the stack;
+	    perform the operation on the numerals;
+	    push the result;
+      if it's  store x,
+            then pop a numeral and store it in x's cell in storage;
+      if it's  test_and_jump_if_false_to LabelL
+            then  pop the stack and see if the value is false (0);
+	          if it is, reset the JVM's instruction counter to  LabelL
+       ... etc. ...
+   end while;
+</pre>
+This algorithm is written in machine code, and it is read and executed
+by the CPU.  So, the CPU executes the JVM, which reads and executes
+byte code.  It all works well because of a stack!
+
+
+<h3>Writing one's own stack</h3>
+
+Table 3 specifies the methods one needs for a stack.
+<pre>TABLE 3: specification of a stack========================================</pre>
+
+<table BORDER CELLPADDING=5>
+<tr>
+<td>
+<tt>Stack</tt>
+</td>
+<td>
+collection of objects such that the most recently inserted object
+is the only one that can be retrieved or removed.
+</tr>
+
+<tr>
+<td>
+<tt>push(Object v)</tt>
+</td>
+<td>
+inserts <tt>v</tt> ``onto'' the stack
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>pop(): Object</tt>
+</td>
+<td>
+removes from the stack the most recently inserted element (of the ones contained in the
+structure) and returns it. 
+If the stack has no elements, an exception is thrown
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>top(): Object</tt>
+</td>
+<td>
+retrieves
+the most recently inserted element (of the ones contained in the
+structure) and returns it. The object is not removed from the stack.
+If the stack has no elements, an exception is thrown
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>isEmpty(): boolean</tt>
+</td>
+<td>
+returns whether the stack holds any elements
+</td>
+</tr>
+</table>
+
+<pre>ENDTABLE=============================================================</pre>
+The names, <tt>push</tt>, <tt>pop</tt>, and <tt>top</tt> are traditional;
+<tt>isEmpty</tt> is the stack's ``length'' operation.
+
+<p>
+A stack can be implemented in various ways; we start with Figure 4,
+which uses an array, <tt>s</tt>,
+to collect the stack's elements.  An extra variable,
+<tt>top</tt>, is used to remember which array element contains the
+most recently inserted object.
+<pre>FIGURE 4: array-based implementation of stack============================
+
+/** Stack0 models a stack data structure  */
+public class Stack0
+{ private int INITIAL_SIZE = 5;
+  private int top;     // how many elements in the stack
+  private Object[] s;  // the stack
+         // invariants: elements on stack are  s[top-1] s[top-2] ... s[0]
+         //             top  is always in range  0 .. s.length-1
+
+  /** Constructor  Stack0  creates a stack. */
+  public Stack0()
+  { s = new Object[INITIAL_SIZE]; 
+    top = 0; 
+  }
+
+  /** push  inserts a new element onto the stack
+    * @param ob - the element to be added */
+  public void push(Object ob)
+  { if ( top == s.length )
+         { // array is full---create a new one to hold more objects:
+           Object[] temp = new Object[s.length * 2];
+           for ( int j = 0;  j != top;  j = j+1 )
+               { temp[j] = s[j]; }  // copy elements into  temp
+           s = temp;   // set  s  to hold address of  temp
+         }
+    s[top] = ob;
+    top = top + 1;
+  }
+
+  /** pop  removes the most recently added element
+    * @return the element removed from the stack
+    * @exception RuntimeException if stack is empty */
+  public Object pop()
+  { if ( top == 0 )
+       { throw new RuntimeException("Stack error: stack empty"); }
+    top = top - 1;
+    return s[top];
+  }
+
+  /** top  returns the identity of the most recently added element
+    * @return the element
+    * @exception RuntimeException if stack is empty */
+  public Object top()
+  { if ( top == 0 )
+       { throw new RuntimeException("Stack error: stack empty"); }
+    return s[top - 1];
+  }
+
+  /** isEmpty  states whether the stack has 0 elements.
+    * @return whether the stack has no elements  */
+  public boolean isEmpty()
+  { return ( top == 0 ); }
+}
+
+ENDFIGURE============================================================</pre>
+
+<p>
+If we create a stack, <tt>operands</tt>,
+from Figure 4 to perform the computation
+in Figure 2, the eighth configuration in that Figure would look
+like this in computer storage:
+<pre>
+                  ----
+Stack0 operands ==| a1 |
+                  ----
+ a1 : Stack0
+ --------------        ---
+ | int INITIAL_SIZE ==| 5 |
+ |            ---      ---
+ | int top ==| 3 |
+ |            -------
+ | Object[] s ==| a2 |
+ |               ----
+ |  ...
+
+  a2 : Object[5]
+ --------------
+ |    0    1    2     3      4   
+ |  -----------------------------
+ | | a7 | a8 | a9 | null | null |
+ |  -----------------------------
+
+  a7 : Integer         a8: Integer           a9: Integer
+ ---------------      --------------        --------------
+ | (holds 20)         | (holds 5)           | (holds 1)
+</pre>
+That is, array <tt>s</tt> holds the addresses of three <tt>Integer</tt>
+objects, and <tt>top</tt> remembers that the stack holds three objects.
+(Review the section, ``<tt>class Object</tt> and Wrappers,'' in
+Chapter 9 to learn why the integers, 20, 5, and 1, must be embedded
+into <tt>Integer</tt> objects before they are inserted into the stack.)
+
+<p>
+The next step in Figure 2 removes two objects from the stack (using
+<tt>pop</tt> twice), does a
+subtraction, and inserts a 4 (using <tt>push</tt>).  The resulting
+configuration looks like this:
+<pre>
+                  ----
+Stack0 operands ==| a1 |
+                  ----
+ a1 : Stack0
+ --------------        ---
+ | int INITIAL_SIZE ==| 5 |
+ |            ---      ---
+ | int top ==| 2 |
+ |            -------
+ | Object[] s ==| a2 |
+ |               ----
+ |  ...
+
+  a2 : Object[5]
+ --------------
+ |    0    1     2     3      4
+ |  -----------------------------
+ | | a7 | a10 | a9 | null | null |
+ |  -----------------------------
+
+  a7 : Integer         a8 : Integer          a9 : Integer      a10 : Integer
+ ---------------      --------------        --------------    --------------
+ | (holds 20)         | (holds 5)           | (holds 1)       | (holds 4)
+</pre>
+Because the value of <tt>top</tt> correctly marks the top of the stack,
+there is no need to erase the value in element 2 of the array---this value
+will never again be used and will be overwritten if a <tt>push</tt>
+is executed next.
+
+<h3>The Java Compiler Uses a Stack</h3>
+
+<p>
+A stack is the key data structure for translating a program 
+into postfix format (and then, into byte code).
+
+<p>
+To keep it simple, think about how we might
+translate an infix arithmetic expression,
+like
+<tt>((3 + 2) * 4) / (5 - 1) </tt>,
+into <tt>3 2 + 4 * 5 1 - /</tt>.
+This time, the stack holds operator symbols (rather than the operands);
+the algorithm goes like this:
+<pre>
+begin with an empty stack and an input stream.
+while there is more input, do:
+  read the next input symbol;
+  if it's a numeral, 
+     then print it to the output filestream;
+  if it's an operator,
+     then push it onto the stack;
+  if it's a '(',
+     then discard it;
+  if it's a ')',     // marks the end of an expression!
+     then pop an operator from the stack and print it
+end while;
+</pre>
+As an exercise, use the algorithm to translate <tt>((3 + 2) * 4) / (5 - 1) </tt>.
+
+<p>
+You can see from the algorithm that the parentheses (especially the
+right one) plays a critical role in directing stack pops and translation.
+This is not an accident --- stacks are used to translate so-called
+<em>bracket languages</em>, and both arithmetic and Java are examples
+of bracket languages.  
+
+<p>
+It is not an accident that Java makes you insert all those tedious
+<tt>{</tt> and <tt>}</tt> symbols and punctuation like <tt>;</tt>
+and keywords like <tt>class</tt> and <tt>while</tt>.
+These are <em>brackets</em> that the Java compiler uses to disassemble
+a Java program and rebuild it in postfix form!
+
+<p>
+As an exercise, you should try to modify the above algorithm so that
+it can translate a baby-Java language of arithmetic, assignments,
+and while-loops into postfix format.  If you can do this, you are
+very close to writing your own Java compiler.
+
+
+
+<h3>Exhaustive Search</h3>
+
+<p>
+Stacks are also used to remember the paths that one travels when one
+``searches'' through a graph, network, or tree.  Here is a simple
+example: Say that you must list all four-letter word permutations of the
+letters, <tt>'a', 'b', 'c'</tt> and <tt>'d'</tt>.  To think of the solution
+systematically, you might draw a ``tree,'' whose paths show the choices
+for a word's first letter, second letter, and so on.
+A sketch of the tree appears in Figure 5.
+<pre>FIGURE 5: search tree for permutations of "abcd"===========================
+
+                                              "" (empty string)
+                                /                   /           \           \
+
+First letter:                a                      b             c           d
+                     /       |      \             / | \         / | \        /|\
+                    /        |       \           /  |  \
+Second letter:     b         c        d        a   c   d        ...         ...
+                  / \       / \      / \      / \ / \ / \
+                 /   \     /   \    /   \
+Third letter:    c   d     b   d    b   c         ...           ...         ...
+                 |   |     |   |    |   |
+(Last letter:)   d   c     d   b    c   b         ...           ...         ...
+
+ENDFIGURE==============================================================</pre>
+
+<p>
+Such a tree is sometimes called a <em>search tree</em>, and the
+paths through the tree are called the <em>search space</em>.
+(Think about an adventure game where you must open the doors, a, b, c, and d,
+and the order in which you open the doors affects the outcome of the game.
+The smartest way for a computer to play the game is to study all possible
+sequences of moves before making its first move.  The computer
+would generate the search tree seen above.)
+
+<p>
+To ``search'' the tree for all four-letter permutations, you follow
+the paths from the tree's top (its <em>root</em>) to its end points
+(it's <em>leaves</em>).
+
+<p>
+At the top of the tree, you select one of the four paths to reach a word's
+first letter; say that you select the leftmost path, choosing <tt>a</tt>.
+This gives you three possible paths to the second letter, and so on.
+Of course, to generate all permuations, you must traverse all the
+paths of the tree.  Traversal of all paths is simply done with
+a stack---as one path is traversed, the stack remembers
+the paths that must be explored later.
+
+<p>
+Figure 6 illustrates the traversal process, where the stack is drawn on
+its side, its ``top'' positioned to the right.
+<pre>FIGURE 6: tree traversal that generates permutations=====================
+
+Stack contents        Tree traveral steps
+--------------        ------------------------
+
+""                      Start with a stack that holds the empty string.
+
+(empty)                 Pop stack.  The valued popped, "", represents the
+                        position at the top of the tree.  Next,
+                        extend string, "",  by  a, b, c, d,  and push the
+                        resulting four strings:
+"d" "c" "b" "a"       
+
+                        Pop stack.  Value  "a"  represents the  a-position in
+"d" "c" "b"             the tree.  Extend "a"  with  b, c, d, and push:
+
+
+"d" "c" "b" "ad" "ac" "ab"
+
+                        Pop stack, extend "ab" by c and d, and push:
+
+"d" "c" "b" "ad" "ac" "abd" abc"
+
+                        Pop stack, and extend "abc" by d, and push:
+
+"d" "c" "b" "ad" "ac" "abd" abcd"
+
+                        Pop stack.  The value popped, "abcd", is a completed
+                        string, so output it.
+
+"d" "c" "b" "ad" "ac" "abd"
+ 
+                        Pop stack, and extend "abd" by c, and push:
+
+"d" "c" "b" "ad" "ac" "abdc"
+
+                        Pop stack.  The value popped, "abdc", is a completed
+                        string, so output it.
+
+"d" "c" "b" "ad" 
+                        Pop stack, extend "ac" by b and d, and push:
+
+"d" "c" "b" "ad" "acd" "acb"
+
+      etc.
+
+ENDFIGURE=============================================================</pre>
+The Figure shows that the search traverses the paths of the
+tree from left-to-right, completely to the end points (``leaves'').
+This form of traversal is called <em>depth-first search</em> because it
+descends to the ``depths'' of the tree as quickly as possible.
+A stack naturally supports depth-first search.
+
+<p>
+Search trees like the one in Figure 5 are used to represent
+choices of possible moves in a computer game; a computer ``player''
+of say, tic-tac-toe (noughts and crosses),
+can use such a tree to systematically explore all
+sequences of moves and calculate all possible outcomes.  Stacks
+help the player remember which move sequences remain to be analyzed.
+
+<p>
+Another well-known example of search, called the ``travelling
+salesman problem,'' finds the shortest path from
+a start city to a destination city 
+on a road map; the paths between
+cities are summarized as a tree, and a stack helps a program calculate the
+total distance travelled in each path from the start city
+to the next city
+to the next, etc., to the destination.
+
+<p>
+A bit of thought will convince you that the search tree itself need not
+be constructed when programming a solution
+to the travelling salesman problem:
+A table that lists adjacent cities and the distances between them
+will suffice for building the stack.  (This is also true for the permutation
+example, where the letters in the string can be consulted
+in place of the search tree.)
+
+<!--
+<h4>Exercises</h4>
+
+<ol>
+<li>
+Implement this
+algorithm for evaluating postfix arithmetic expressions:
+<pre>
+Stack s = new Stack();  
+read the input expression, e;
+while ( more tokens left in e )
+      { get next token, w;
+        if ( w is a numeral )
+                { s.push(w); }
+        else if ( w is a "+" )
+                { v2 = s.pop();  v1 = s.pop();  s.push(v1+v2); }
+        else if ( w is a "-" )
+                { v2 = s.pop();  v1 = s.pop();  s.push(v1-v2); }
+        else if ( w is a "*" )
+                { v2 = s.pop();  v1 = s.pop();  s.push(v1*v2); }
+        else { error: bad symbol }
+      }
+print the final answer, which is  s.pop()
+</pre>
+<li>
+Use a stack to write an application that checks an arithmetic expression
+for <em>balanced parentheses</em>, that is,
+every left parenthesis is followed in the expression by
+a matching right parenthesis.
+<li>
+A stack is <em>bounded</em> if it is limited to some maximum size.
+Revise the constructor in Figure 4 so that receives a parameter that
+states the size of the stack, and revise <tt>push</tt> so that it
+generates an exception if stack size is exceeded.
+<li>
+Problems that cannot be done with stack---given 01234...
+rearranging only by push, and pop into arb permutation.
+Knuth: impossible to build a sequence  v1v2...vn such that
+vj < vk < vi  yet  i < j < k  (e.g.,  4123)
+<li>
+Finish the depth-first search in Figure 6.
+<li>
+Write an application that prints the permutations calculated by
+Figure 6.
+</ol>
+-->
+
+<p>
+<br>
+<p>
+<hr>
+
+<h3>Demo programs</h3>
+
+Here the programs that implement the examples in this Lecture:
+
+<p>
+<a href="PostfixEx/Stack/package-summary.html"><h4>API for Stack</h4></a>
+<a href="PostfixEx/Stack.1.html"><h4>Directory of array-implemented Stack</h4></a>
+
+
+<br><p>
+<a href="PostfixEx/Arithmetic/package-summary.html"><h4>API for postfix
+application</h4></a>
+<a href="PostfixEx/index.html"><h4>Directory of postfix translation/evaluation application</h4></a>
+
+<br><p>
+<a href="PermEx.html"><h4>Directory of permutation-generator application</h4></a>
+
+</body>
+

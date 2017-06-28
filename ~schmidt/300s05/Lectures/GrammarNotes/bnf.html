@@ -1,0 +1,409 @@
+
+<body>
+
+
+<h1>Grammars and trees</h1>
+
+When I speak to you, how do you understand what I am saying?
+First, it is important that we communicate in a common language, say,
+English,
+and it is important that I speak in grammatically correct
+English (e.g., ``Eaten house horse before.'' is a grammatically
+incorrect, useless communication).  Finally, you must know how
+to attach meanings to the words and phrases that I use.
+
+<p>
+The same ideas are just as important when you talk to a computer, by means of
+a program written in a programming language.  For the computer to
+understand what you say, the computer must have knowledge of the
+language you use.  This includes:
+<ol>
+<li>
+<em>syntax</em>: the spelling and grammatical structure of the computer
+language
+<li>
+<em>semantics</em>: the meanings of the words and phrases.
+</ol>
+
+<p>
+In the 1950s, Noam Chomsky realized that the syntax of a sentence
+(or computer program) can be represented as a tree, and the rules
+for building syntactically correct sentences can be written as an
+inductive definition.  Chomsky called the inductive definition a
+<em>grammar</em>.
+(John Backus and Peter Naur independently discovered the same notation,
+and for this reason, a grammar is sometimes called
+<em>BNF (Backus-Naur form) notation</em>.)
+
+
+<h3>Grammars (BNF)</h3>
+
+<p>
+Grammars are best introduced by example.
+Say that we wish to define precisely how to write an
+arithmetic expression.  We might say that such expressions consist
+of numerals composed with addition and subtraction operators.
+But we should be more precise.  Here are three laws (``rules''
+or ``equations'') that define
+arithmetic expressions; they define a grammar for arithmetic:
+<pre>
+EXPRESSION ::= NUMERAL  |  ( EXPRESSION OPERATOR EXPRESSION )
+NUMERAL ::=  0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+OPERATORS ::=  +  |  -
+</pre>
+The words in upper-case letters name phrase forms and word forms.
+Thus, the first rule defines how to write EXPRESSION phrases:
+an <tt>EXPRESSION</tt> phrase consists
+of <em>either</em> a <tt>NUMERAL</tt> word
+<em>or</em> 
+a left bracket followed by another (smaller) <tt>EXPRESSION</tt>
+phrase followed by an <tt>OPERATOR</tt> word
+followed by another (smaller) <tt>EXPRESSION</tt> phrase
+followed by a right bracket.
+(The vertical bar means ``or.'')
+
+<p>
+The rule for <tt>NUMERAL</tt> tells us that a numeral word is built
+in ten different ways, and the third rule, for <tt>OPERATOR</tt>,
+defines the two words that are legal operators.
+
+<p>
+Using the rules, we can verify that this sequence of words is
+a legal <tt>EXPRESSION</tt> phrase:
+<pre>
+( 4 - ( 3 + 2 ) )
+</pre>
+There is a precise formal justification:
+<ol>
+<li>
+<tt>4</tt> is a NUMERAL (as are 3 and 2)
+<li>
+all NUMERALs are legal EXPRESSION phrases, so <tt>( 3 + 2 )</tt> is an
+EXPRESSION phrase, because + is an OPERATOR and 3 and 2 are EXPRESSIONS
+<li>
+<tt>( 4 - ( 3 + 2 ) )</tt> is an EXPRESSION, because 4 and ( 3 + 2 )
+are EXPRESSIONs, and - is an OPERATOR
+</ol>
+This reasoning is nicely drawn as a tree:
+<pre>
+
+<img src="exprtree.jpg">
+</pre>
+Indeed, a sequence of words is an EXPRESSION phrase if and only
+if one can build a tree for the words using the grammar rules.
+Such a tree is called the phrase's  <em>parse tree</em>.
+
+<p>
+It is easy to see that the three rules of the grammar
+define three inductive definitions, which work together to generate
+EXPRESSION trees.  Here they are:
+
+<p>
+An EXPRESSION phrase is either
+<ul>
+<li>
+a NUMERAL phrase, or
+<li>
+a left bracket and another EXPRESSION phrase and an OPERATOR phrase
+and another EXPRESSION phrase and a right bracket.
+</ul>
+The inductive definition of OPERATOR is trivial:
+<p>
+An OPERATOR phrase is either
+<ul>
+<li>
++ or
+<li>
+-
+</ul>
+<p>
+Finally, a NUMERAL phrase is one of
+<ul>
+<li>
+1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9
+</ul>
+
+
+<h4>A second example: fractional numerals</h4>
+
+Chomsky's grammars were quickly extended with conveniences that let
+us define phrase structure succinctly.  To illustrate,
+consider this grammar, which 
+defines
+fractional-number words.
+
+<p>
+A
+fractional number has as a whole-number part
+followed by an optional fraction part.  Both whole-number and
+fraction parts consist of nonempty sequences of numerals;
+the fraction part is preceded by a decimal point.  Here are the
+grammar rules:
+<pre>
+NUMBER ::=  WHOLE_PART  FRACTION_PART?
+WHOLE_PART ::=  NUMERAL_SEQUENCE
+FRACTION_PART ::=  . NUMERAL_SEQUENCE
+NUMERAL_SEQUENCE ::=  NUMERAL  NUMERAL*
+NUMERAL ::=  0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+</pre>
+The first rule tells us that a <tt>NUMBER</tt> phrase consists
+of a <tt>WHOLE_PART</tt> followed by a <tt>FRACTION_PART</tt>;
+the question mark states that the <tt>FRACTION_PART</tt>
+is optional. 
+The second and third rules have obvious readings; note the decimal point
+in the third rule.
+
+<p>
+The asterisk in the fourth rule
+stands for ``zero or more''---a <tt>NUMERAL_SEQUENCE</tt>
+consists of one <tt>NUMERAL</tt> followed by zero or more additional
+<tt>NUMERAL</tt>s.  As before,
+the vertical bars in the last rule are read as ``or.''
+
+<p>
+For example,  <tt>123.4</tt> is a <tt>NUMBER</tt> because
+<tt>123</tt>, the <tt>WHOLE_PART</tt>, is a <tt>NUMERAL_SEQUENCE</tt>
+and because <tt>.4</tt> is a <tt>FRACTION_PART</tt>, where <tt>4</tt>
+is a <tt>NUMERAL_SEQUENCE</tt>.  Here is its tree:
+<pre>
+
+<img src="numeraltree.jpg">
+</pre>
+The example shows that * and ? are useful shorthands for specifying
+tree structure.
+
+<p>
+For conciseness, the first three grammar
+rules can be compressed into just one:
+<pre>
+NUMBER ::=  NUMERAL_SEQUENCE  [[ . NUMERAL_SEQUENCE ]]?
+</pre>
+The double-bracket pairs,  <tt>[[</tt> and <tt>]]</tt>, enclose 
+a phrase; because of the question mark suffixed to it,
+the entire phrase is optional.  
+We also use double brackets to
+enclose phrases that can be repeated zero or more times, e.g.,
+<pre>
+NUMBER_LIST ::=  NUMBER  [[ , NUMBER ]]* 
+</pre>
+This rule
+defines the syntax of a list of numbers separated by commas, e.g.,
+<tt>1, 2.34, 56.7</tt> is a <tt>NUMBER_LIST</tt> as is merely
+<tt>89</tt>.
+
+<p>
+Double brackets can be used to enclose alternatives, e.g.,
+this grammar rule defines exactly the two words, ``cat'' and ``cut'':
+<pre>
+WORDS ::=  c [[ a | u ]] t
+</pre>
+
+<p>
+As the examples show, spaces within the grammar rules do <em>not</em>
+imply that
+spaces are required within the phrases defined by the rules.  For example,
+we normally write a <tt>NUMBER</tt>, like <tt>56.7</tt>,
+with no internal spaces. 
+
+
+<h4>A third example: mini-Java</h4>
+
+We can use a grammar to define the structure of an entire programming
+language.  Here is the grammar for a subset of Java, which we call
+``mini-Java.''  
+First, here are the rules for phrases:
+<pre>
+PROGRAM ::= { STATEMENT_LIST }
+STATEMENT_LIST ::= [[ STATEMENT ; ]]*
+STATEMENT :: =    DATA_TYPE IDENTIFIER
+               |  IDENTIFIER = EXPRESSSION
+	       |  println IDENTIFIER
+	       |  while EXPRESSION { STATEMENT_LIST }
+DATA_TYPE ::= int | boolean
+EXPRESSION ::=  IDENTIFIER | NUMERAL | ( EXPRESSION OPERATOR EXPRESSION )
+</pre>
+The first rule states that a program is a list of statements surrounded
+by brackets,
+and the second rule shows that each statement is terminated by a semicolon.
+The third rule defines the language's four statement forms
+(a variable declaration, an assignment, a print statement, and a loop).
+The last two rules define the data type names and the expression phrases.
+
+<p>
+Here are the rules for words:
+<pre>
+IDENTIFIER ::=  LETTER [[ LETTER ]]*
+NUMERAL ::=  DIGIT [[ DIGIT ]]*
+OPERATOR ::= + | ==
+LETTER ::= A | B | C | ... | Z
+NUMERAL ::= 0 | 1 | ... | 9
+</pre>
+Identifiers are one or more letters, and numerals are one or more digits.
+There are just two operators, addition and equality comparison.
+
+<p>
+For simplicity, we assume that a mini-Java program separates all words
+by one or more blanks or newlines.  Here is an example
+mini-Java program:
+<pre>
+{ int A ;
+  A = 5 ;
+  while  ( A == 5 )  { int B ; B = 6 ;  A = ( B + A ) ;
+                       println A ; } ;
+  boolean C ;  println C ;
+}
+</pre>
+As an exercise, you should draw the parse tree for this program.
+
+
+<h2>Semantics of parse trees</h2>
+
+<p>
+When the Java compiler processes a Java program, it first builds the
+program's parse tree.  Then, it
+must calculate the meaning --- the semantics --- of the
+parse tree.
+The process of giving meaning can be done with a tree-traversal algorithm.
+We now study how this is done.
+
+<p>
+Recall this small grammar for EXPRESSION phrases:
+<pre>
+EXPRESSION ::= NUMERAL  |  ( EXPRESSION OPERATOR EXPRESSION )
+NUMERAL ::=  0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+OPERATORS ::=  +  |  -
+</pre>
+and this parse tree:
+<pre> 
+<img src="exprtree.jpg">
+</pre>
+What is this tree's meaning?
+There are two possible answers:
+<ol>
+<li>
+an <em>interpretive meaning</em>: the tree denotes (means) a number,
+in this case,  -1.
+<li>
+a <em>translation meaning</em>: the tree denotes the byte-code
+program,
+<pre>
+loadconst 4
+loadconst 3
+loadconst 2
+add
+subtract
+</pre>
+which, when executed by the Java Virtual Machine, computes an
+interpretive meaning.
+</ol>
+The Java compiler chooses the second semantics, but it is easy to
+state both semantics, and we do so here.
+
+<p>
+Since EXPRESSIONs are defined inductively, their
+interpretive meaning is defined by this recursive
+schema:
+<pre>
+interpretExpression( NUMERAL ) = return NUMERAL
+
+interpretExpression( EXPRESSION1 OPERATOR EXPRESSION2 ) =
+    let val1 = interpretExpression( EXPRESSION1 )
+    let val2 = interpretExpression( EXPRESSION2 )
+    if OPERATOR == "+"  then  return  (val1 + val2)
+    if OPERATOR == "-"  then  return  (val1 - val2)
+</pre>
+Here is the interpretive meaning of the expression, drawn pictorially.
+The tree is decomposed into its two subtrees, and
+the function is applied to the subtrees:
+<pre>
+
+<img src="intexpr1.jpg">
+</pre>
+The first subtree's meaning is just 4.  The second subtree must be decomposed:
+<pre>
+
+<img src="intexpr2.jpg">
+</pre>
+Now, the meanings are assembled:
+<pre>
+
+<img src="intexpr3.jpg">
+</pre>
+
+<p>
+Here is the above interpretive meaning summarized in a linear notation, where
+we show just the leaves of the parse tree:
+<pre>
+interpretExpression(  ( 4 - ( 3 + 2 ) )  )
+
+=>
+
+let val1 = interpretExpression( 4 )
+let val2 = interpretExpression( ( 3 + 2 ) )
+return  val11 - val2
+
+=>
+
+let val1 =  return 4
+let val2 = (  let val1 = interpretExpression( 3 )
+              let val2 = interpretExpression( 2 )
+	      return  val1 + val2
+           )
+return  val11 - val2
+
+=>
+
+let val1 = 4
+let val2 = ( return 3 + 2 )
+return  val11 - val2
+
+=>
+
+return 4 - 5  =  -1
+</pre>
+
+<p>
+An expression's translation meaning is defined so that
+the answer computed is a string of byte-code
+instructions:
+<pre>
+translateExpression( NUMERAL ) = return  "pushconst " + NUMERAL + " \n "
+
+translateExpression( EXPRESSION1 OPERATOR EXPRESSION2 ) =
+    return  translateExpression( EXPRESSION1 ) 
+	    +  translateExpression( EXPRESSION2 )
+            +  translateOperator( OPERATOR ) 
+
+translateOperator( "+" ) = "add \n "
+
+translateOperator( "-" ) = "subtract \n "
+</pre>
+Here is the translation meaning of the example expression:
+<pre>
+translateExpression(  ( 4 - ( 3 + 2 ) )  )
+
+=>  translateExpression( 4 ) 
+    + translateExpression( ( 3 + 2 ) )
+    + translateOperator( "-" )
+
+=>  "pushconst 4 \n " 
+    + translateExpression( ( 3 + 2 ) )
+    + translateOperator( "-" )
+
+=>  "pushconst 4 \n "
+    + translateExpression( 3 ) + translateExpression( 2 ) + translateOperator( "+" )
+    + "subtract \n " 
+
+=>  "pushconst 4 \n "
+    + "pushconst 3 \n "
+    + "pushconst 2 \n "
+    + "add \n "
+    + "subtract \n " 
+
+=>  "pushconst 4 \n pushconst 3 \n pushconst 2 \n add \n subtract \n "
+</pre>
+
+<p>
+The next lecture develops in detail a compiler and a Java Virtual Machine
+for mini-Java.
+</body>

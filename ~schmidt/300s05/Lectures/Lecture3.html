@@ -1,0 +1,333 @@
+
+<body bgcolor="#FFFFF0">
+
+<b>CIS300 Spring 2005</b>
+<hr>
+
+<h1>The activation-record stack</h1>
+
+Almost every programming language that contains procedures or methods
+in its vocabulary is implemented with a stack structure,
+and this is also the case with Java.
+
+<p>
+The earlier lecture on execution semantics showed how objects are
+constructed within a process's storage partition.   But the presentation
+in that lecture simplified the semantics of method call --- the lecture
+showed the code of an invoked method
+``copied'' into the object that was
+the target of the invocation.  In reality, no code is copied into objects;
+instead, an <em>activation record</em> is constructed
+and pushed onto the process's <em>activation record stack</em>.
+
+<p>
+First, recall that a program's storage partition looks like this:
+<pre>
+<img src="ActRecordEx/layout2.jpg">
+</pre>
+The storage used for data will be used to build a
+stack at the ``left end,'' and objects will be constructed at the ``right end.''
+When a program's 
+<tt>main</tt> method is started, the partition looks like this:
+<pre>
+<img src="ActRecordEx/layout3.jpg">
+</pre>
+A record for <tt>main</tt> is pushed onto the activation record stack;
+the record holds cells for <tt>main</tt>'s local variables and the return
+address to which the JVM should jump when <tt>main</tt> finishes.
+Say that <tt>main</tt> calls a method, <tt>p</tt>.  Then, an activation record
+holding
+<tt>p</tt>'s local variables and return address is pushed onto the stack:
+<pre>
+<img src="ActRecordEx/layout4.jpg">
+</pre>
+If <tt>p</tt> calls <tt>q</tt>, the same happens:
+<pre>
+<img src="ActRecordEx/layout5.jpg">
+</pre>
+The pictures show us that
+
+<strong>
+<ul>
+<li>
+the activation-record stack <em>remembers the history of incompleted
+method calls</em>, and
+<li>
+the topmost activation record <em>holds the data
+values for the currently executing method.</em>
+</ul>
+</strong>
+
+<p>
+When <tt>q</tt> finishes, its activation record is popped, and the
+configuation reverts to
+<pre>
+<img src="ActRecordEx/layout4.jpg">
+</pre>
+Now, <tt>p</tt> can finish its execution from the point where it paused to
+invoke <tt>q</tt>.  When <tt>p</tt> finishes, its record is popped,
+and <tt>main</tt> can finish.
+
+<p>
+Now we study an example to see how this concept applies to 
+methods associated with objects.
+
+
+<h3>An example</h3>
+
+Here is a small Java application:
+<pre>
+public class Controller
+{ public static void main(...)
+  { int x = 2;
+    Model m = new Model();
+    m.set(x+1);
+    System.out.println( m.get() );
+} }
+
+
+public class Model
+{ private int val;
+
+  public Model() { val = 0; }
+
+  public void set(int w)
+  { Model x = new Model();
+    val = w; }
+
+  public int get() { return val; }
+}
+</pre>
+When the Java compiler checks these two classes and translates them into .class
+files, it makes some small but crucial changes;
+the changes are marked by <tt>//!</tt>:
+<pre>
+public class Controller
+{ public static void main(...)
+  { int x = 2;
+    Model m = new Model();
+    m.set(x+1);
+    System.out.println( m.get() );
+    return;  //!
+  } }
+
+
+public class Model
+{ private int val;
+
+  public Model()
+  { this.val = 0;  //!
+    return this;   //!
+  }
+
+  public void set(int w)
+  { Model x = new Model();
+    this.val = w;  //!
+    return;  //!
+  }
+
+  public int get()
+  { return this.val; } //!
+}
+</pre>
+First, every method is ended with an explicit <tt>return</tt> statement,
+which clarifies when control leaves the method and returns to the method's
+caller.  Second, within each class, references to the class's fields
+(attributes) are prefixed by <tt>this</tt>.  When we study the example's
+execution semantics, we will see that <tt>this</tt> is an extra local variable
+that helps associate method code with the object that the method manipulates.
+
+<p>
+In the previous lecture, we learned that the Java compiler next
+reformats the code into posfix notation and then into byte code.
+Because byte code is difficult for humans to read, we will not use
+the byte-code versions of the two example classes in the example
+that follows.
+
+<p>
+When the program is started (<tt>java Controller</tt>),
+the JVM and <tt>java.lang</tt> are loaded
+into the partition.  Then, <tt>Controller.class</tt> and
+<tt>Model.class</tt> are loaded, and the controller's
+<tt>main</tt> method is started: an activation record for
+<tt>main</tt> is pushed onto the activation-record stack:
+<pre>
+<img src="ActRecordEx/ex1a.jpg">
+</pre>
+As noted earlier, <tt>main</tt>'s record holds cells for its two local
+variables, <tt>x</tt> and <tt>m</tt>, as well as the return address of
+where execution should continue when <tt>main</tt> finishes and returns.
+
+<p>
+The first instruction that executes, at address 102, saves 2 in
+<tt>x</tt>'s cell:
+<pre>
+<img src="ActRecordEx/ex1b.jpg">
+</pre>
+The next instruction, at address 103, constructs a new <tt>Model</tt>
+object.  Several steps must be performed:
+<ol>
+<li>
+A <tt>Model</tt> object is constructed in heap storage, and a cell
+for its private variable, <tt>val</tt>, is allocated therein.
+<li>
+The object's constructor method is immediately executed.
+<li>
+The address of the newly constructed object is returned as the result
+of executing the constructor method.  
+</ol>
+
+The picture below shows Step 1: The object is constructed, a cell is
+allocated for its variable, <tt>val</tt>, and
+its constructor method is started. (The instruction counter in the
+JVM is reset to 202, the first instruction in the constructor method.) 
+
+<p>
+The constructor method's activation record is pushed onto the stack.
+It holds cells for the method's local variables (in this case, none),
+and it holds the return address back to <tt>main</tt>'s code.
+It holds an additional cell, <tt>this</tt>, which <em>holds the address
+of the newly constructed object</em>.
+
+<pre>
+<img src="ActRecordEx/ex1c.jpg">
+</pre>
+The picture shows that <em>no code is copied into the <tt>Model</tt> object</em> --- the code
+stays where it is, and the instruction counter holds the code's address.
+
+<p>
+Now, we learn why the Java compiler reformatted the assignment,
+<tt>val = 0</tt>, into <tt>this.val = 0</tt>.
+The value of variable, <tt>this</tt>, is found within the topmost record
+of the activation-record stack --- the value is 500.
+Hence, it is the <tt>val</tt> variable within the object at address 500
+that must be assigned zero:
+<pre>
+<img src="ActRecordEx/ex1d.jpg">
+</pre>
+The <tt>this</tt> variable removes the need to copy method code into
+objects.
+
+<p>
+Now, it is time to return from the constructor method.
+The <tt>return this</tt> instruction causes the value in the
+return-address cell to be copied into the instruction counter and
+also the value in <tt>this</tt>'s cell to be returned to its destination
+in <tt>main</tt>.  (In reality, the value of <tt>this</tt> is copied
+into a register in the CPU and later it is copied into <tt>main</tt>'s variable
+<tt>m</tt>.)
+<pre>
+<img src="ActRecordEx/ex1e.jpg">
+</pre>
+The activation record for the constructor method
+is erased.
+
+<p>
+Now, the assignment to <tt>m</tt> is completed:
+<pre>
+<img src="ActRecordEx/ex1f.jpg">
+</pre>
+
+<p>
+Next, it is time to execute the method invocation,
+<tt>m.set(x+1)</tt>.  The evaluation of the invocation proceeds
+from left to right:
+<ol>
+<li>
+determine the target object's (<tt>m</tt>'s) address.
+(Here, it is 500.)
+<li>
+determine the value of the argument (actual parameter).
+Here, it is <tt>3</tt>.
+<li>
+start the invoked method.
+</ol>
+Steps 1 and 2 are shown below:
+<pre>
+<img src="ActRecordEx/ex1g.jpg">
+</pre>
+
+And here is the start of Step 3 --- an activation record for
+method <tt>set</tt> is pushed, where its <tt>this</tt> variable is
+initialized to
+500.  Notice that its argument
+is saved in the variable for formal parameter, <tt>w</tt>.
+And, the return address is saved.
+The instruction counter is reset to the first instruction within the
+invoked method:
+<pre>
+<img src="ActRecordEx/ex1h.jpg">
+</pre>
+
+The next instruction constructs a second <tt>Model</tt>
+object, and the steps seen a moment ago are repeated.
+We see a new object constructed and fresh activation record pushed
+for <tt>Model</tt>'s constructor method:
+<pre>
+<img src="ActRecordEx/ex1j.jpg">
+</pre>
+The constructor executes as seen before, using the same instructions
+as before, but since <tt>this</tt>'s cell holds 600, the new object
+is correctly initialized.  The constructor returns its address
+to its caller, and its activation record disappears:
+<pre>
+<img src="ActRecordEx/ex1k.jpg">
+</pre>
+Because the execution has returned to the code for <tt>set</tt>,
+and because the topmost activation record holds the variables for <tt>set</tt>,
+variable <tt>x</tt> is correctly assigned:
+<pre>
+<img src="ActRecordEx/ex1l.jpg">
+</pre>
+and the correct <tt>val</tt> field is reset:
+<pre>
+<img src="ActRecordEx/ex1m.jpg">
+</pre>
+Now, <tt>set</tt> is finished, and execution returns to <tt>main</tt>:
+<pre>
+<img src="ActRecordEx/ex1n.jpg">
+</pre>
+Notice that the object at address 600 still rests in storage, even
+though it is impossible for the application to reference it;
+the object is <em>garbage</em>,  and at a later point in the execution,
+the <em>garbage collector</em> program within the JVM will examine all
+of storage and erase all such unreachable objects.  (In contrast,
+languages like C and C++ lack garbage collectors, and the programmer
+must insert code to explictly erase unneeded objects.)
+
+<p>
+The next instruction,
+<tt>System.out.println(m.get())</tt>, triggers an invocation of
+<tt>get</tt> whose <tt>this</tt> cell holds 500.  Once <tt>get</tt>
+returns 3, the <tt>println</tt> method is invoked.
+This finishes the application's execution.
+
+<h3>The temporary-value stack</h3>
+
+The previous example emphasized how the activation-record stack
+remembers the local variables and return address for each method that is
+invoked.   But within a method, there might be instructions that
+compute arithmetic expressions.    We saw in the earlier lecture that
+arithmetic expressions are computed with the assistance of a stack;
+the stack that holds arithmetic values is called
+the <em>temporary-value stack</em>.
+
+<p>
+Although it was not drawn in the above diagrams, each activation
+record holds its own temporary-value stack for computing arithmetic.
+If we examine the precise structure of a method's activation record,
+we would find this:
+<pre>
+<img src="ActRecordEx/record.jpg">
+</pre>
+The temporary-value stack literally grows ``out of the right end''
+of the activation record; this lets the temporary-value stack grow
+as needed to evaluate complicated arithmetic expressions.
+When a function is invoked in the middle of evaluating a complex
+arithmetic expression, the activation record for the invoked function
+is constructed just as if it is resting  ``on the top'' of the temporary
+value stack.  This makes it easy to return from the invoked function
+and finish evaluating the expression.
+
+</body>
+

@@ -1,0 +1,843 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Queues</h2>
+
+<p>
+Another classic data structure is the <em>queue</em>.  A queue
+differs from a stack in the way its removal operation behaves---a
+removal removes and returns
+the element that has resided in the queue for the longest
+period of time.  For this reason, a queue is called a
+``first in, first out'' data structure.
+
+<p>
+It is helpful to think of a queue as a ``pipeline'', where objects
+enter from the rear, wait in line, and exit from the front:
+<pre>
+               +------------------------+
+   enter --->  )   )    )    )    )     ) --->  exit
+               +------------------------+
+</pre>
+
+
+<h4>Queues for resource management</h4>
+<p>
+Queues are used when multiple objects wish to use a ``resource,''
+but only one object can use the resource at a time.
+A real-life example of a queue is the line of people who wait at the
+bank to interact with a teller---one person deals with the teller (the
+``resource''), and
+the others order themselves so that the person who has waited
+the longest goes next.
+
+<p>
+A computer's operating system uses queue data structures
+to manage the computer's resources.  Here are some examples:
+<ul>
+<li>
+<em>the printer:</em>  the OS uses 
+a ``print queue''
+to hold the identities of the processes (executing user programs)
+that wish to use the printer.  Once a process starts using the printer,
+it is allowed to continue until it is completely finished.  The other
+processes that wish to use the printer must wait, and their IDs (and
+the address of the file to print) are
+kept in the queue.  When the process using the printer finishes, the
+process kept waiting longest in the queue is retrieved, and its
+print job is started.
+<li>
+<em>the internal (``hard'') disk drive</em>: a disk can perform at
+most one read or write at any one instant, so the OS uses a queue to
+hold processes's requests (the ID of the process and the details about
+the read/write) to read or write from a sector on disk.
+The disk's controller repeately retrieves from the queue the next
+request ``in line'' and performs it.  (When there are no more requests,
+the controller ``sleeps''.)
+<li>
+<em>the process queue:</em> Recall from the lecture notes about operating
+systems that the CPU itself is managed by the OS with the aid of
+a process queue.  The process queue contains the IDs of all processes
+that are ready to execute.  The OS
+retrieves a ready process's ID from
+the process queue, loads that process's instruction number and data information
+into the CPU's registers, and starts the CPU to execute 
+the process's instructions for
+some designated ``time slice.''  At the end of the time slice,
+the ID of the executing process is inserted at the end of the
+process queue, the information in the registers for the process
+is saved (in the process's process control block --- see the OS notes),
+and the ID of another ready process is retrieved from the process queue.
+</ul>
+Without queues, an operating system could not operate!
+
+<h4>Queues for simulations</h4>
+
+<p>
+A classic programming application that
+uses queues is a <em>simulation</em>, where a real-life
+activity is modelled by objects.   For example, if we wanted to simulate
+the airplane traffic at an airport, we use an object
+to model the airport's runway---this is the ``resource'' used
+by airplanes to take off and land, and at most one airplane can use
+the resource at a time.  The airplanes are objects;
+an airplane resides either in the air, waiting to land, or on the ground,
+waiting to leave.   The simulation places the airplanes waiting
+to land within a ``landing queue'' and the airplanes waiting to leave
+in a ``take-off queue,'' producing a situation like that in the
+following drawing:
+<pre>
+           Landing queue
+           ----------------------------
+Plane ---> )Plane ) Plane ) ... ) Plane) ---+
+           -----------------------------     \ lands
+                                              \
+                                               v
+                                            Runway ---> (exits simulation)
+                                               ^
+                   Take-off queue             / leaves
+                   ---------------------     /
+        Plane ---> )Plane ) ... ) Plane)----+
+                   ---------------------
+</pre>
+The simulation's controller
+creates planes that enter the simulation,
+either from the air or from the ground, and it inserts each plane into the
+appropriate queue.  When the runway is unused, the controller
+removes a plane from
+a queue and gives it the resource.  When the plane completes its use
+of the resource, the controller removes the plane from the simulation
+and counts it in the simulation's ``throughput.''
+
+<p>
+Such a simulation can be used with various algorithms
+for using the runway to see which algorithm produces maximum ``throughput''
+of planes.
+
+
+<h4>Queues for communication and manufacturing</h4>
+
+<p>
+Queues often participate directly in computation, especially in
+manufacturing.
+Consider a ``print shop'', which must ``manufacture'' lines of
+colored text, from inputs of text and colors:
+From one input source (a ``producer'') a sequence of text lines is
+received; from a second input source, a sequence of color selections
+is received.  The print shops matches each text line to each color and
+manufactures a line of colored text:
+<pre>
+PRODUCER OF      +-----------+
+TEXT LINES  ---> )   )   )   ) ---> --+  
+                 +-----------+        |
+                                    PRINT SHOP ---> sequence of
+PRODUCER OF      +-----------+        |              colored text
+COLORS    -----> )   )   )   ) ---> --+               lines 
+                 +-----------+
+</pre>
+The text lines and colors arrive at different rates, so they are
+entered and saved in queues.  The print shop extracts
+a text line from one queue and a color from the other queue
+and combines them into a line of colored text, which it prints.
+
+<p>
+At
+<a href="QueueEx.html"><tt>www.cis.ksu.edu/~schmidt/300f04/Lectures/QueueEx</tt></a>
+is a small demo program that implements a simple version of the
+print-shop ``game.''
+The program is a bit simplistic in that it
+asks two humans (and not two other computer processes)
+to be the producers of the text and colors, but the program illustrates
+well the importance of queues to the print shop.
+
+<p>
+The above example also suggests how queues can be used to pass
+messages (communications)  from one agent to another in a system.
+Agents can read and write messages at different speeds, and the queues
+ensure that no messages are lost.
+
+<h3>Defining and coding a queue</h3>
+
+<p>
+Table 9 specifies a queue data structure.
+<pre>TABLE 9: specification of a queue====================================</pre>
+
+<table BORDER CELLPADDING=5>
+<tr>
+<td>
+<tt>Queue</tt>
+</td>
+<td>
+collection of objects such that the longest residing object
+is the only one that can be retrieved or removed.
+</tr>
+
+<tr>
+<td>
+<tt>enqueue(Object v)</tt>
+</td>
+<td>
+inserts <tt>v</tt> at the ``end'' of the queue
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>dequeue(): Object</tt>
+</td>
+<td>
+removes from the ``front'' of the queue the longest residing object
+(of the ones contained in the structure) and
+returns it. If the queue has no elements, an exception is
+thrown.
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>getFront(): Object</tt>
+</td>
+<td>
+returns the identity of the object at the ``front'' of the queue
+but does not remove it.
+If the queue has no elements, an exception is
+thrown.
+</td>
+</tr>
+
+<tr>
+<td>
+<tt>isEmpty(): boolean</tt>
+</td>
+<td>
+returns whether the queue holds any elements.
+</td>
+</tr>
+</table>
+
+<pre>ENDTABLE=========================================================</pre>
+
+<p>
+Figure 10 shows an implementation of a queue that uses a linked list.
+<pre>FIGURE 10: implementation of a queue====================================
+
+/** Queue implements a queue */
+public class Queue
+{ private Cell front;  // marks the first Cell of the queue
+  private Cell rear;   // marks the last Cell of the queue
+
+  /** Constructor Queue creates an empty queue */
+  public Queue()
+  { front = null;
+    rear = null;
+  }
+
+  /** enqueue  inserts a new element to the end of the queue
+    * @param ob - the element to be added */
+  public void enqueue(Object ob)
+  { Cell c = new Cell(ob, null);
+    if ( front == null )  // is the queue empty?
+       { front = c; }     // if true, then set front to  c
+    else { rear.setNext(c); }  // else, attach  c  to the rear of the queue
+    rear = c;
+  }
+
+ /** dequeue  removes the element from the front of the queue
+   * @return the element removed
+   * @exception RuntimeException if the queue is empty */
+  public Object dequeue()
+  { if ( front == null )
+       { throw new RuntimeException("Queue error: queue empty"); }
+    Object answer = front.getVal();
+    if ( front == rear )  // queue contains just this one element?
+       { rear = null; }   // if true, then set queue to empty
+    front = front.getNext();
+    return answer;
+  }
+
+ /** getFront returns the identity of the queue's front element
+   * @return the element
+   * @exception RuntimeException if stack is empty */
+  public Object getFront()
+  { if ( front == null )
+       { throw new RuntimeException("Queue error: queue empty"); }
+    return front.getVal();
+  }
+
+  /** isEmpty  states whether the queue has 0 elements.
+    * @return whether the stack has no elements  */
+  public boolean isEmpty()
+  { return (front == null); }
+}
+
+ENDFIGURE================================================================</pre>
+We create a queue, <tt>q</tt>, and add the strings
+<tt>"a"</tt>, <tt>"b"</tt>, and <tt>"c"</tt> to it by stating,
+<pre>
+Queue q = new Queue();
+q.enqueue("a");
+q.enqueue("b");
+q.enqueue("c");
+</pre>
+At this point, element <tt>"a"</tt> resides at the front of the 
+queue, and <tt>"c"</tt> rests at the rear.  The configuration
+in storage looks like this:
+<pre>
+           ----
+Queue q ==| a1 |
+           ----
+ a1 : Queue
+ -------------------
+ | Cell front ==| a2 |
+ |               -----
+ | Cell rear ==| a4 |
+ |  ...         ----
+
+  a2 : Cell                a3 : Cell                   a4 : Cell
+ ------------              ------------               ------------
+ | Object val ==| "a" |    | Object val ==| "b" |    | Object val ==| "c" |
+ |               -----     |               -----     |               -----
+ | Cell next ==| a3 |      | Cell next ==| a4 |      | Cell next ==| null |
+ |              ------     |              -----      |              -----
+ |  ...                    |  ...                    | ...
+</pre>
+At this point the message, <tt>q.dequeue()</tt>, would return <tt>"a"</tt>
+and reset <tt>front</tt> to <tt>a3</tt>.
+
+<h3>Iterative operations on linked-list implementations of queues</h3>
+
+The most elegant implementation of a queue is with a linked list of
+cells (although with some effort, you can use arrays to implement queues).
+The links in the cells suggest a natural order for examining the
+queue's contents--from front to rear.  For practice, here is
+an additional method,  <tt>lengthOf</tt>, that we might insert into
+<tt>class Queue</tt>:
+<pre>
+/** lengthOf returns the number of objects held in the queue
+  * @return the length  */
+public int lengthOf()
+{ int length = 0;
+  Cell current = front;
+  while ( current != null )
+        // invariant: length holds the number of cells from the queue's
+        //   front up to, but not including, the  current  one
+       { length = length + 1;
+         current = current.getNext();
+       }
+  return length;
+}
+</pre>
+Although there is another, simpler way of maintaining and returning
+a queue's length (hint: declare another private field,
+<tt>private int length</tt>), the point of the
+<tt>lengthOf</tt> coding is that <em>there is a standard pattern for
+traversing and processing the elements of a linked list</em>:
+It uses a loop and a variable, <tt>current</tt>, that examines the
+cells in the list one by one.
+
+<p>
+Here is another queue method:
+<pre>
+/** toString  calculates a string representation the queue's contents.
+  * @return the string  */
+public String toString()
+{ String answer = ""
+  Cell current = front;
+  while ( current != null )
+        // invariant:  answer contains the string representations of the
+        //  objects from the front cell up to, non including,  current
+        { answer = answer + " " + current.getVal().toString();
+          current = current.getNext();
+        }
+  return answer;
+}
+</pre>
+Again, the same pattern of loop traverses the list's cells.
+This pattern is a classic one and is well worth remembering.
+
+<h4>Coding a queue with an array</h4>
+
+It is possible to build a queue with an array.   Here are some
+pictures to give the idea: We configure the queue with two integer
+variables, <tt>front</tt> and <tt>rear</tt>, and an array.
+An empty queue is implemented something like this:
+<pre>
+.           +-----+
+int front : |  -1 |
+.           +-----+
+int rear :  |  -1 |
+.           +-----+
+.                 0      1      2      3
+.             +------+------+------+------+
+Object[] q :  | null | null | null | null |
+.             +------+------+------+------+
+</pre>
+Say that objects <tt>a, b</tt>, and <tt>c</tt> are enqueued.
+The array fills up like this:
+<pre>
+.           +-----+
+int front : |  0  |
+.           +-----+
+int rear :  |   2 |
+.           +-----+
+.                 0      1      2      3
+.             +------+------+------+------+
+Object[] q :  |   a  |    b |    c | null |
+.             +------+------+------+------+
+</pre>
+Next, say that a single dequeue operation is performed.
+The queue's internal structure looks like this:
+<pre>
+.           +-----+
+int front : |  1  |
+.           +-----+
+int rear :  |   2 |
+.           +-----+
+.                 0      1      2      3
+.             +------+------+------+------+
+Object[] q :  | null |    b |    c | null |
+.             +------+------+------+------+
+</pre>
+Now, say that two more objects, <tt>d</tt> and <tt>e</tt> are
+enqueued.  In this situation, there is a ``wrap-around'' of the
+array:
+<pre>
+.           +-----+
+int front : |  1  |
+.           +-----+
+int rear :  |   0 |
+.           +-----+
+.                 0      1      2      3
+.             +------+------+------+------+
+Object[] q :  |   e  |    b |    c |   d  |
+.             +------+------+------+------+
+</pre>
+At this point, a dequeue operation would extract the object
+at array cell, 1.  An enqueue operation would cause an error,
+and indeed, this is the main disadvantage of using an array to
+code a queue --- the queue can fill up.
+
+<p>
+As an exercise, you should code a version of <tt>class Queue</tt>
+that uses an array.  Take care to monitor when the queue is completely
+full, when the queue holds exactly one object, and when it is empty.
+(Do this by checking the values of <tt>front</tt> and <tt>rear</tt>.)
+
+
+<h3>Queues facilitate breadth-first search</h3>
+
+<p>
+A queue can be used to conduct a <em>breadth-first search</em>
+of a tree, where the nodes inside a tree are examined in the order 
+of closeness to the tree's root (START) node.
+Recall, from the lecture on stacks, that the search tree in Figure 5 listed the
+choices for generating permutations of four letters, and a stack was
+used in Figure 6 to construct a depth-first search.
+Figure 11 shows how to use a queue for a breadth-first search of the
+same tree.
+The front of the queue is portrayed at the left, and the queue's rear
+is shown at the right.
+<pre>FIGURE 11: breadth-first search=========================================
+
+Current node   Queue (front to rear)
+
+START          (empty)
+
+a              b c d    (examine 'a'; save 'b', 'c', 'd')
+
+b              c d ab ac ad  (save the nodes underneath 'a' and examine 'b')
+
+c              d ab ac ad ba bc bd  (again, save the nodes under 'b')
+
+d              ab ac ad ba bc bd ca cb cd
+
+ab             ac ad ba bc bd ca cb cd da db dc
+
+ac             ad ba bc bd ca cb cd da db dc abc abd
+
+ad             ba bc bd ca cb cd da db dc abc abd acb acd
+
+ba             bc bd ca cb cd da db dc abc abd acb acd adb adc  
+
+etc.
+
+ENDFIGURE==============================================================</pre>
+
+<p>
+The traversal moves quickly across the breadth of the 
+tree, saving lower-depth nodes for later examination.  The
+queue ensures that the node that is removed for next
+examination is at the same breadth, whenever possible, as the
+node just examined.
+Contrast Figure 11 with Figure 6, whose stack delivers a node
+at a lower depth whenever possible.
+
+<p>
+Depth-first search proves useful for computer players of games where
+there are many possible next moves and many possible combinations of
+moves (e.g., chess). 
+Such a situation makes it infeasible to consider all possible
+outcomes of all possible sequences of moves, and a (partial) breadth-first
+search calculates
+all partial sequences of moves, instead.
+For example, if the search tree in Figure 5 listed the sequences of
+moves in a ``spelling game,'' then the sixth configuration
+in Figure 11 holds
+all possible two-move sequences.
+At this point, the search could be stopped, and the queue examined
+for the best possible move based on this partial knowledge of the
+entire tree.
+
+<h4>Demonstration program</h4>
+
+
+Here is the two-player colors/text game that uses queues that was
+demonstrated in the lecture:
+<h4>
+<a href="QueueEx.html"><tt>www.cis.ksu.edu/~schmidt/300f04/Lectures/QueueEx</tt></a>
+</h4>
+
+The game used two queues---one held Player 1's submitted lines of text
+and the other held Player 2's submitted sequence of colors.  The
+queues were constructed from  <tt>class Queue</tt>, which appears in
+<tt>package Queue</tt> in the above game.
+
+<!--
+
+
+<h2>Iterative and Recursive Processing of Linked Lists</h2>
+
+Both stack and queue data structures are elegantly defined with
+linked lists.  In general, linked lists are used to 
+model collections where elements are not ``indexed'' or
+``keyed'' but are retrieved in some fixed order (e.g., oldest first or
+youngest first).
+
+<p>
+Perhaps the standard processing one does to a linked list is traverse
+its cells and compute on each of the values held in the cells.
+Given <tt>class Cell</tt>, we might write
+the following method that counts the number of cells in a linked
+list by traversing the list from front to back:
+<pre>
+  /** lengthOf calculates the number of cells in a linked list
+    * @param l - the leading cell of the list
+    * @return the length of the linked list  */
+  public int lengthOf(Cell l)
+  { int length = 0;
+    Cell c = l;
+    while ( c != null )
+          // invariant:  lengthOf(l) == length + lengthOf(c)
+          { length = length +1;
+            c = c.getNext();
+          }
+   return length;
+  }
+</pre>
+The loop's invariant suggests that there is a recursion in the basic notion
+of traversing the loop.  Indeed, 
+<em>because <tt>class Cell</tt> is defined in terms of itself</em>,
+a simpler solution to the above problem is written with a recursively
+defined method:
+<pre>
+  /** lengthOf calculates the number of cells in a linked list
+    * @param l - the leading cell of the list
+    * @return the length of the linked list  */
+  public int lengthOf(Cell l)
+  { int length = 0;
+    if ( l == null )
+         { length = 0; }
+    else { length = 1 + lengthOf(l.getNext()); }
+    return length;
+  }
+</pre>
+The method is based on the natural and obviously correct notion that
+the length of a linked list is the length of the lead cell (namely, 1)
+added to length of the rest of the list.
+
+<p>
+The general pattern for linked-list processing goes as follows:
+<pre>
+recursivelyProcess(Cell l)
+{ if ( l == null )
+       { compute answer for an empty list }
+  else { extract  l.getVal()  and compute on it;
+         get result of  recursivelyProcess(l.getNext());
+         combine the two preceding values into the complete answer;
+       }
+  return the answer;
+}
+</pre>
+This pattern of computing is perfectly matched to the internal structure
+of <tt>class Cell</tt>:
+<pre>
+public class Cell
+{ private Object value;
+  private Cell next:
+   ...
+  public Object getVal() { return value; }
+  public Object getnext() { return next; }
+}
+</pre>
+
+When you use the pattern for linked-list processing, you are guaranteed
+that you will cover both possible forms of linked list (namely, the
+null-list and a list of Cells), and you are guaranteed that the
+method must terminate (assuming that the linked list has been correctly
+assembled in the first place).
+
+<p>
+These ideas prove useful when we later define and process data structures that
+utilize self-reference in their internal attributes.
+
+<p><hr><p>
+Here is the directory that contains the above examples plus some others:
+<p>
+<a href="ListProcessingEx"><tt>http://www.cis.ksu.edu/~schmidt/300f01/Lectures/ListProcessingEx</tt></a>
+
+<p>
+<hr>
+-->
+
+<!--
+   
+<h4>Immutable Data Structures</h4>
+
+A crucial problem is concatenating two linked lists.
+(This might be done when coding a ``set union'' operation, where
+each set is modelled as a linked list.) 
+<pre>
+/** concat constructs a list that is its two arguments connected together.
+  * @param l1 - the first list
+  * @param l2 - the second list
+  * @return the address of the concatenated list  */
+public Cell concat(Cell l1, Cell l2)
+</pre>
+It is tempting to code this method so that the rear cell of <tt>l1</tt>
+is linked to the front cell of <tt>l2</tt>, and the method returns the
+address of
+<tt>l1</tt> as its result.
+But this usually
+leads to disaster, as shown here:
+<pre>
+Cell x = ... a list of three cells ...;
+Cell y = ... a list of two cells ...;
+Cell z = concat(x, y);   // concat connects x to y and returns x as its result
+System.out.println(lengthOf(x));   // prints 5, which is very wrong!
+</pre>
+Alas, the simple-minded solution ruins <tt>x</tt>---the
+<tt>concat</tt> method <em>should not
+alter the structure of either of its two parameters when constructing
+its result.</em>  (This is a valuable rule to follow in object-oriented
+programming---never change the values of any of the arguments to a method.
+If you violate this rule, you are asking for lots of errors
+when the parameters are referenced later.)
+
+<p>
+In worst case, <tt>concat</tt> might be written so that
+it constructs a brand new list by traversing all of <tt>l1</tt> and copying
+its values into new cells and then traversing all of <tt>l2</tt> and
+copying its values into new cells.
+Such a method is painful to write and it wastes the opportunity to share
+cells that are already constructed (which was what we were trying to
+do in the first coding of <tt>concat</tt>).
+
+<p>
+Say that we banished the <tt>setNext</tt> method from <tt>class Cell</tt>.
+This makes it impossible to change the private fields of any cell once
+it is constructed.  Perhaps surprisingly,
+by making <tt>class Cell</tt> more restrictive, we can do more sharing
+of its objects.  Specifically,
+there is a beautiful way of
+concatenating two lists that employs maximal sharing of the cells that
+already exist:
+<pre>
+/** append constructs a list that is its two arguments connected together.
+  * @param xs - the first list
+  * @param ys - the second list
+  * @return the address of the concatenated list  */
+public Cell append(Cell xs, Cell ys)
+{ Cell answer;
+  if ( xs == null )
+       { answer = ys; }
+  else { Cell c = append(xs.getNext(), ys);
+         answer = new Cell(xs.getVal(), c);   
+       }
+  return answer;
+}
+</pre>
+This solution constructs a linked list that consists of
+copies of <tt>xs</tt>'s cells and sharing of
+all of <tt>ys</tt>.  <em>Assuming that <tt>setnext</tt> is
+disallowed</em>, this is safe because there is no
+way to change one list and
+affect another:
+<pre>
+Cell x = ... a list of three cells ...;
+Cell y = ... a list of two cells ...;
+Cell z = append(x, y);   // returns a new list that has x's values and shares y
+System.out.println(lengthOf(x));   // prints 3
+System.out.println(lengthOf(y));   // prints 2
+System.out.println(lengthOf(z));   // prints 5
+</pre>
+
+<p>
+A data type is <em>immutable</em> if its objects cannot be changed
+once they are constructed.  (That is, the values in an object's
+fields cannot be changed.)  Immutable objects can be shared by
+multiple variables (or multiple objects or multiple data structures),
+because no variable has the means for altering the shared object.
+
+<p>
+Note that the versions of <tt>class Stack</tt> and <tt>class Queue</tt>
+in Chapter 12 define mutable data types.  It is often simpler and safer
+to program with immutable types, so we will study next how these are defined.
+
+<h4>Inductive Data Types</h4>
+
+This material is related to Section 12.4, Chapter 12, of the CIS200 notes.
+
+<p>
+We used <tt>class Cell</tt> to implement or <em>model</em> a data type
+of lists.  It is time to define precisely what a list data type is.
+The classic name for it is a <em>cons list</em>:
+
+<dl>
+<dd>
+An object is a <tt>ConsList</tt>-object if
+<ul>
+<li>
+it is the object, <tt>Nil</tt>; or
+<li>
+it is a structure, <tt>Cons(h, t)</tt>, where <tt>h</tt> is an
+<tt>Object</tt> and <tt>t</tt> is
+another <tt>ConsList</tt>-object.
+</ul>
+</dl>
+This form of definition is called an <em>inductive definition</em>.
+
+In lecture, we modelled <tt>Nil</tt>-objects with the Java value,
+<tt>null</tt>, and we modelled <tt>Cons(h, t)</tt>-objects with the
+phrase,  <tt>new Cell(h, t)</tt>.
+
+<p>
+Using our more formal terminology, a conslist consisting of "a", "b",
+and "c" is this structure:
+<pre>
+Cons("a", Cons("b", Cons("c", Nil)))
+</pre>
+Whether this is implemented with <tt>null</tt> and <tt>Cell</tt>
+is a coding decision---<tt>class Cell</tt> is <em>not</em> the same
+as the data type, <tt>ConsList</tt>.  (We see why, later.)
+
+<p>
+When a data type is defined with an inductive definition, 
+<em>computation on elements of the data type is also defined
+inductively</em>, and this is implemented by means of a recursively
+defined method.  Here are examples:
+<pre>
+/** length of  a ConsList:  */
+lengthOf(Nil) = 0
+lengthOf( Cons(h, t) ) =  1 + lengthOf(t)
+</pre>
+This set of equations, <em>one per clause in the inductive definition</em>,
+makes clear how to write a Java method that computes <tt>lengthOf</tt>.
+
+<p>
+<pre>
+/** summing integers in a Conslist:  */
+summation(Nil) = 0
+summation( Cons(h, t) ) =  h + summation(t)
+</pre>
+
+<p>
+<pre>
+/** appending one list to another:  */
+append(Nil, ys) = ys
+append(Cons(h, t),  ys) =  Cons(h, append(t, ys))
+</pre>
+
+
+<p>
+Other data types can be defined by means of inductive definition.
+Here are three more classic examples:
+
+<h4>Binary numerals</h4>
+
+<dl>
+<dd>
+An object is a <tt>BinaryNumeral</tt>-object if
+<ul>
+<li>
+it is the object, <tt>0</tt>; or
+<li>
+it is the object, <tt>1</tt>; or
+<li>
+it is a structure, <tt>[N]0</tt>, where <tt>N</tt> is an existing
+<tt>BinaryNumeral</tt> object.  (Usually, we write this as just <tt>N0</tt>.)
+<li>
+it is a structure, <tt>[N]1</tt>, where <tt>N</tt> is an existing
+<tt>BinaryNumeral</tt> object.  (Usually, we write this as just <tt>N1</tt>.)
+</ul>
+</dl>
+For example, the binary numeral 13, normally written as 1101,
+has this internal structure:  <tt>[[[1]1]0]1</tt>
+The internal structure is important, because it is exploited in the
+wiring of arithmetic operations into a computer chip.
+
+<p>
+<pre>
+/** computing the decimal value of a BinaryNumber:  */
+valueOf(0) = 0
+valueOf(1) = 1
+valueOf([N]0) = 2 * valueOf(N)
+valueOf([N]1) = (2 * valueOf(N)) + 1
+</pre>
+
+<h4>Booleans</h4>
+
+<dl>
+<dd>
+An object is a <tt>boolean</tt>-object if
+<ul>
+<li>
+it is the object, <tt>false</tt>; or
+<li>
+it is the object, <tt>true</tt>
+</ul>
+</dl>
+Although there is no recursion in the inductive definition, the same
+principles apply when designing operations on elements of the type:
+<pre>
+negation(false) = true
+negation(true) = false
+
+and(false, B) = false   (for any boolean, B)
+and(true, B) = B        (for any boolean, B)
+
+or(false, B) = B        (for any boolean, B)
+or(true, B) = true      (for any boolean, B)
+</pre>
+
+<h4>Binary Trees</h4>
+
+<dl>
+<dd>
+An object is a <tt>BinaryTree</tt>-object if
+<ul>
+<li>
+it is the object, <tt>Leaf</tt>; or
+<li>
+it is a structure, <tt>Node(v, l, r)</tt>, where <tt>v</tt> is an
+<tt>Object</tt>, and <tt>l</tt> and <tt>r</tt> are already existing
+<tt>BinaryTree</tt>-objects.
+</ul>
+</dl>
+Such trees will be extensively used in future weeks.
+
+
+-->
+
+
+</body>
+

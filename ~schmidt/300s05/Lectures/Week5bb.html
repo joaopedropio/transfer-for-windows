@@ -1,0 +1,186 @@
+
+<body bgcolor="#FFFFFF">
+
+<h2>Iterative and Recursive Processing of (Singly) Linked Lists</h2>
+
+<p>
+The standard way to proces a singly linked list is to traverse
+its cells one by one and compute on each one.
+Once again, here is <tt>class Cell</tt>:
+<pre>
+public class Cell
+{ private Object val;  // value in the cell
+  private Cell next;   // the address of the next cell in the list
+
+  public Cell(Object value, Cell link)
+  { val = value; next = link; }
+
+  public Object getVal() { return val; }
+
+  public Cell getNext() { return next; }
+
+  public void setNext(Cell link) { next = link; }
+}
+</pre>
+and here is the standard iterative pattern for traversing and processing
+all the cells in a list, <tt>l</tt>:
+<pre>
+Cell current = l;
+while ( current != null )
+      { "process Cell  current";
+        current = current.getNext();
+      }
+</pre>
+
+<p>
+We now use the iterative pattern in a method 
+that counts the number of cells in a linked
+list.  Let <tt>l</tt> be the address of the leading cell
+in the list to be counted:
+<pre>
+/** lengthOf calculates the number of cells in a linked list
+  * @param l - the leading cell of the list
+  * @return the length of the linked list  */
+public int lengthOf(Cell l)
+{ int length = 0;
+  Cell c = l;
+  while ( c != null )
+      // invariant: 
+      //   lengthOf(l) == length + lengthOf(c)
+        { length = length +1;
+          c = c.getNext();
+        }
+ return length;
+}
+</pre>
+The loop uses variable <tt>c</tt> to ''leap'' from cell to cell,
+using the links held in the cells.  Variable
+<tt>length</tt> is incremented each time <tt>c</tt> makes a leap.
+
+<p>
+The loop makes good sense to us, because we think of a linked
+list as a sequence of distinct cells that are linked together:
+<pre>
+front    Cell--+---+    Cell--+---+    Cell--+------+
+| o-|--> | "a" | o-|--> | "b" | o-|--> | "c" | null |
++---+    +-----+---+    +-----+---+    +-----+------+
+</pre>
+So, it is easy to see that <tt>lengthOf(front)</tt> returns 3 as its answer.
+
+<p>
+In the above coding of <tt>lengthOf</tt>,
+there is an invariant assertion inserted
+inside the while loop.
+Recall that an invariant documents what the loop is doing
+while it iterates its body over and over.
+
+<p>
+Take a close look at it:
+<pre>
+// invariant:  lengthOf(l) == length + lengthOf(c)
+</pre>
+(Remember--- <tt>l</tt> is the front cell of the entire list,
+and <tt>c</tt> is the cell reached part way through the traversal.)
+What does it say?
+<dl>
+<dd>
+<em>
+The total quantity of cells in the list headed by <tt>l</tt> --- the
+<tt>lengthOf l</tt> --- is exactly the sum of the number of cells
+counted so far (as remembered by <tt>length</tt>) plus the
+quantity of cells in the list headed by <tt>c</tt>, namely, the remainder
+of the list that is yet to be counted, the <tt>lengthOf c</tt>!
+</em>
+</dl>
+The invariant uses a ``recursion'' to make its point that, to compute
+the length of a complete list, the loop must compute the length of
+the list's suffixes.
+
+<p>
+This invariant
+suggests that there is a recursion in the basic notion
+of traversing the loop.  Indeed, 
+<em>because <tt>class Cell</tt> is defined in terms of itself</em>,
+a simpler solution to the above problem is written with a recursively
+defined method:
+<pre>
+/** lengthOf calculates the number of cells in a linked list
+  * @param l - the leading cell of the list
+  * @return the length of the linked list  */
+public int lengthOf(Cell l)
+{ int length = 0;
+  if ( l == null )
+       { length = 0; }  // an empty list has length 0
+  else // the list is nonempty, so count its cells:
+       { // Calculate the length of the list that
+         //   follows the lead cell, l:
+         Cell suffix = l.getNext();
+         length = lengthOf(suffix);
+         // now, add one for  l's  cell:
+         length = length + 1;
+       }
+  return length;
+}
+</pre>
+The method is based on the natural and obviously correct notion that
+the length of a linked list is the length of the lead cell (namely, 1)
+added to length of the rest of the list.
+
+<p>
+Here is a more terse restatement of the method:
+<pre>
+  public int lengthOf(Cell l)
+  { int length = 0;
+    if ( l == null )
+         { length = 0; }
+    else { length = 1 + lengthOf(l.getNext()); }
+    return length;
+  }
+</pre>
+Remember that when a method ``restarts'' itself via a recursion,
+<em>a new copy of the method is activated</em>.  This idea is developed
+in the next lecture.
+
+<p>
+The recursion in <tt>lengthOf</tt> suggests that a list is a ``nested''
+or ``layered'' structure, which we might draw like this:
+<pre>
+Cell-----------------------+
+|     "a"                  |
+|     Cell--------------+  |
+|     |    "b"          |  |
+|     |    Cell-------+ |  |
+|     |    |    "c"   | |  |
+|     |    |    null  | |  |
+|     |    +----------+ |  |
+|     +-----------------+  |
++--------------------------+
+</pre>
+
+The ``layers'' are implied by
+the internal structure
+of <tt>class Cell</tt>:
+<pre>
+public class Cell
+{ private Object value;
+  private Cell next;  // this is another, smaller list embedded in this one
+   ...
+  public Object getVal() { return value; }
+  public Object getnext() { return next; }
+}
+</pre>
+Notice the ``recursive'' reference to <tt>Cell</tt> within
+<tt>class Cell</tt> --- it suggests that another list is nested or layered
+inside the Cell that holds the front <tt>value</tt>.
+
+<p>
+Of course, we have studied heap-storage layout
+well enough to know that field <tt>next</tt> holds the address
+of an object that happens to be also a <tt>Cell</tt> object.
+But the idea is intriguing: In concept, can a Cell hold inside itself
+another Cell?  If we answer ``yes'' to this question, we move from
+the world of ``iterative'' data structures to the world
+of ``recursive'' (``inductive'') ones.
+
+</body>
+

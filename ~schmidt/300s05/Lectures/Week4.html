@@ -1,0 +1,274 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Linked-List Implementation of Stacks</h2>
+
+One disadvantage of using an array to implement a stack is the
+wasted space---most of the time most of the array is unused.
+A more elegant and economical implementation of a stack uses a
+<em>linked list</em>, which is a data structure that links together
+individual data objects as if they were ``links'' in a ``chain'' of data.
+
+<p>
+Here is a sketch of a linked-list-based ``stack'' that holds 1, then 5, and
+then 20 at the bottom:
+<pre>
+          ---
+top ---> | 1 |
+         |---|      ---
+         | o-|---> | 5 |
+          ---      |---|      ----
+                   | o-|---> | 20 |
+                    ---      |----|
+                             |null|
+                              ----
+</pre>
+The list consists of three
+``cells,'' each of which holds a data object and a ``link'' to another
+cell.  A variable, <tt>top</tt>, holds the address of the first cell in the
+list.  An empty stack looks like this:
+<pre>
+top ---> null
+</pre>
+(That is, variable <tt>top</tt> holds value, <tt>null</tt>.)
+Each time an object is pushed, a cell is constructed, the object
+is inserted into the cell, and the cell is linked to the front of the
+chain of cells.  For example, pushing  <tt>20</tt> onto the empty stack
+gives us
+<pre>
+          ----
+top ---> | 20 |
+	 |--- | 
+	 |null|
+          ----
+</pre>
+After 5 and then 1 are pushed, we obtain the picture first seen.
+
+<p>
+Say that we pop an object from the stack; the picture changes to this:
+<pre>
+                    ---
+          top ---> | 5 |
+	           |---|      ----
+                   | o-|---> | 20 |
+                    ---      |----|
+	                     |null|
+                              ----
+</pre>
+
+<h3>How to code Cells and Stacks</h3>
+
+<p>
+Figure 7 defines <tt>class Cell</tt>, which one uses to create the
+cells in the list.
+<pre>FIGURE 7: list cell======================================================
+
+/** Cell models a cell of a linked list.  */
+public class Cell
+{ private Object val;  // value in the cell
+  private Cell next;   // the address of the next cell in the list
+
+  /** Constructor Cell builds a new cell 
+    * @param value - the value inserted in the cell
+    * @param link - the cell that is chained to this new cell */
+  public Cell(Object value, Cell link)
+  { val = value; 
+    next = link;
+  }
+
+  /** getVal  returns the value held in the cell  */
+  public Object getVal()
+  { return val; }
+
+  /** getNext  returns the address of the cell chained to this one */
+  public Cell getNext()
+  { return next; }
+
+  /** setNext  resets the address of the cell chained to this one
+    * @param link - the address of the Cell that is chained to this one */
+  public void setNext(Cell link)
+  { next = link; }
+}
+
+ENDFIGURE================================================================</pre>
+<tt>class Cell</tt> is really just a container to hold the object,
+<tt>val</tt>, and the linkage, <tt>next</tt>.
+
+<p>
+The three-celled linked list sketched above can be manually
+constructed by this
+sequence of initializations:
+<pre>
+Cell cell1 = new Cell(new Integer(20), null);
+Cell cell2 = new Cell(new Integer(5), cell1);
+Cell top = new Cell(new Integer(1), cell2);
+</pre>
+Since <tt>class Cell</tt> holds values of type <tt>Object</tt>,
+we must ``wrap'' the integers into <tt>Integer</tt> objects before
+placing them in cells.
+
+<p>
+The example list looks like a stack, and indeed, it is easy to
+revise the coding of <tt>class Stack</tt> so that it is implemented with a linked list.
+Figure 8 shows the new implementation of a stack.
+<pre>FIGURE 8: stack implemented by a linked list============================
+
+/** Stack implements a stack as a linked list */
+public class Stack
+{ private Cell top;  // marks the topmost Cell of the stack
+
+  /** Constructor Stack creates an empty stack */
+  public Stack()
+  { top = null; }
+
+  /** push  inserts a new element onto the stack
+    * @param ob - the element to be added */
+  public void push(Object ob)
+  { top = new Cell(ob, top); }
+
+ /** pop  removes the most recently added element
+    * @return the element removed from the stack
+    * @exception RuntimeException if stack is empty */
+  public Object pop()
+  { if ( top == null )
+       { throw new RuntimeException("Stack error: stack empty"); }
+    Object answer = top.getVal(); 
+    top = top.getNext(); 
+    return answer; 
+  }
+
+ /** top  returns the identity of the most recently added element
+    * @return the element
+    * @exception RuntimeException if stack is empty */
+  public Object top()
+  { if ( top == null )
+       { throw new RuntimeException("Stack error: stack empty"); }
+    return top.getVal();
+  }
+
+  /** isEmpty  states whether the stack has 0 elements.
+    * @return whether the stack has no elements  */
+  public boolean isEmpty()
+  { return (top == null); }
+}
+
+ENDFIGURE==============================================================</pre>
+
+<p>
+Here is an important point: <em>In terms of the perspective of the user
+of the stack</em>, the coding in Figure 7 looks the same
+and computes the same behaviors as the earlier version of
+<tt>class Stack</tt> --- we have changed the internal <em>implementation</em>
+of <tt>class Stack</tt> but maintained the same <em>behavior</em>.
+(In this sense, the coding in Figure 7 is an equivalement replacement part
+for any program that requires a stack.)
+
+<p>
+The linked list implementation has a simpler internal state and
+simpler codings of its methods than the stack whose implementation
+is based on an array.  Here is
+a picture of the storage configuration when a stack named
+<tt>operands</tt> was used to push 20 then 5 then 1:
+<pre>
+                  ----
+Stack operands ==| a1 |
+                  ----
+ a1 : Stack
+ -------------------
+ | Cell top ==| a15 |
+ |             ----- 
+ |  ...
+
+  a11 : Cell                a13 : Cell                a15: Cell
+ ------------              ------------               ------------
+ | Object val ==| a10 |    | Object val ==| a12 |    | Object val ==| a14 |
+ |               -----     |               -----     |               -----
+ | Cell next ==| null |    | Cell next ==| a11 |     | Cell next ==| a13 | 
+ |              ------     |              -----      |              -----
+ |  ...                    |  ...                    | ...
+
+  a10 : Integer         a12 : Integer           a14 : Integer
+ ---------------      --------------        --------------
+ | (holds 20)         | (holds 5)           | (holds 1)
+</pre>
+Say that <tt>operands.pop()</tt> is used twice, removing two values from
+the stack, and <tt>operands.push(new Integer(4))</tt> is used next.
+The storage configuration changes to this:
+<pre>
+                  ----
+Stack operands ==| a1 |
+                  ----
+ a1 : Stack
+ -------------------
+ | Cell top ==| a17 |
+ |             ----- 
+ |  ...
+
+  a11 : Cell                a13 : Cell                a15: Cell
+ ------------              ------------               ------------
+ | Object val ==| a10 |    | Object val ==| a12 |    | Object val ==| a14 |
+ |               -----     |               -----     |               -----
+ | Cell next ==| null |    | Cell next ==| a11 |     | Cell next ==| a13 |
+ |              ------     |              -----      |              -----
+ |  ...                    |  ...                    | ...
+
+  a17 : Cell                         a16 : Integer
+ ------------                       ---------------
+ | Object val ==| a16 |             | (holds 4)
+ |               ----- 
+ | Cell next ==| a11 |
+ |              ------
+ |  ...
+
+  a10 : Integer         a12 : Integer           a14 : Integer
+ ---------------      --------------        --------------
+ | (holds 20)         | (holds 5)           | (holds 1)
+</pre>
+The cells at addresses <tt>a13</tt> and <tt>a15</tt> are no longer
+used by the stack.  What happens to them?   Do they remain in computer
+storage, unused, forever?   The answer is ``no''--- Embedded within
+the Java Virtual Machine is an extra
+program, called a <em>garbage collector</em>, that periodically examines
+computer storage
+and destroys all objects that are not used by the executing Java program.   
+
+<p>
+(<em>BeginFootnote:</em> An object, <tt>ob</tt>,  is ``used'' in the sense that,
+starting from an application's <tt>main</tt>
+method, we can find an address of an object,
+and that object holds an address of another object, and so on, until
+an object is reached that holds the address of <tt>ob</tt>.
+<em>EndFootnote</em>)
+
+<p>
+Thanks to the garbage collector program, we need not make special
+efforts to destroy the cell that is unneeded after an invocation of
+<tt>pop</tt>; the cell will disappear automatically. 
+Also, the garbage collection will dispose of those <tt>Integer</tt>
+objects that are no longer used by the application.
+
+<p>
+The importance of the garbage collector to programming style cannot
+be overstated---it lets a programmer use objects as freely as
+numbers, creating them at will, using them with methods
+as arguments and results,
+and not worrying about their fate when they are ``used up.''
+
+<p>
+<hr>
+Here is the folder where you can find the implementation of the
+linked-list stack:
+
+<a href="ListEx/ListStack.html"><h4>Directory of linked-list-implemented Stack</h4></a>
+
+<!--
+There is a test program here:
+
+<a href="ListEx/"><h4>Directory of test programs for the above</h4></a>
+-->
+
+<p>
+<hr>
+<br>
+
+</body>

@@ -1,0 +1,558 @@
+
+<body bgcolor="#FFFFF0">
+
+<h2>Mutable trees, parent links, and node deletions </h2>
+
+A <em>mutable tree</em> is a tree in which you can change the values and
+subtrees of its nodes.  Let <tt>MutableTree</tt> be the data-type name
+of mutable binary trees.
+
+<p>
+The <tt>Node</tt> objects used in mutable trees contain the usual
+methods plus these new ones:
+<pre>
+public void setValue(Object v)
+
+public void setLeft(MutableTree t)
+
+public void setRight(MutableTree t)
+</pre>
+Of course, these are used to reset a node's value and links to left
+and right subtrees. 
+
+<p>
+<em>Important:  When using mutable trees, you cannot
+share nodes or leaves!</em>   If a node is shared by two distinct
+trees, and you alter the node's value or link, this affects both of the
+trees that share the node.  The outcome is almost always wrong.
+
+<h4>When to use mutable trees</h4>
+
+The main motivation for using mutable trees is to avoid construction
+of lots of new Nodes when inserting and deleting elements.
+In particular, Node deletion becomes far simpler.
+
+<p>
+You can
+implement an application with mutable trees if both of the following
+hold true:
+<ol>
+<li>
+The application maintains only <em>one</em> tree, and there is never a
+need to make copies of the tree, to ``undo'' changes to the tree, to
+``backtrack'' to an earlier version, nor to share nodes/leaves/subtrees.
+<li>
+The values in the tree's nodes must be frequently changed
+<em>or</em> nodes are frequently deleted <em>or</em> subtrees are
+frequently rearranged.
+</ol>
+If you are uncertain if both (1) and (2) hold, then play it safe
+and use immutable trees.
+
+<h4>Mutable trees have parents</h4>
+
+Because mutable trees are used when there are frequent changes,
+the frequent changes should be done relatively efficiently.
+When a node must be moved,
+it is valuable
+for a node to hold the address of its <em>parent</em> node, that is,
+the node that links to the node that must be moved---this
+lets us change the parent's
+link, too.  For this reason,
+we will add an extra attribute to every leaf and node---the address
+of its parent.  This motivates two more methods for both
+leaves and nodes:
+<pre>
+/** parent  returns (the address of) this tree's parent node */
+public Node parent()
+
+/** setParent  tells this tree to remember that it has a  new_parent  */
+public void setParent(Node new_parent)
+</pre>
+Here is a picture of a mutable tree, rooted at address <tt>a1</tt>,
+that holds the values,
+<tt>a</tt>, <tt>b</tt>, and <tt>c</tt> along with parent links:
+<pre>
+        a1: Node
+              value = "a"
+              parent = null
+              left = a2
+              right = a3
+
+    a2: Node                a3: Node
+          value = "b"             value = "c"
+          parent = a1             parent = a1
+          left = a4               left = a6
+          right = a5              right = a7
+
+a4: Leaf                    a6: Leaf
+      parent = a2                 parent = a3
+
+a5: Leaf                    a7: Leaf
+      parent = a2                 parent = a3
+</pre>
+
+We might draw a terse picture of these objects as
+<pre> 
+         a1: a
+       /^    ^\  
+      v |    | v 
+    a2: b    a3: c
+    /^  ^\    /^  ^\
+   v |  | v  v |  | v
+   a4   a5    a6   a7
+</pre>
+where the down-pointing arrows denote the left- and right-subtree links,
+and the up-pointing arrows denote the parent links.
+
+
+<p>
+Here is a quick summary of <tt>class MutableTree</tt>:
+<pre>
+/** MutableTree defines the data type of binary trees that can be altered
+  *   once they are constructed.  Important: substructures of this form
+  *   of tree _cannot_ be shared!
+  * Forms of this tree are intended to be:  
+  *  (i) a leaf,  which holds the address of its parent node (if any), or 
+  *  (ii) a node that holds a value, a left subtree, a right subtree,
+  *       and the address of its parent node (if any).  */
+public abstract class MutableTree
+{ // accessor methods:
+  public Object value()
+  public MutableTree left()
+  public MutableTree right()
+  public Node parent()
+
+  // mutator methods:
+  public void setValue(Object v)
+  public void setLeft(MutableTree t)
+  public void setRight(MutableTree t)
+  public void setParent(Node p)
+}
+</pre>
+The coding of a leaf looks like this:
+<pre>
+/** Leaf models a tree leaf---an empty tree  */
+public class Leaf extends MutableTree
+{ private Node my_parent;
+
+  /** Constructor Leaf constructs the empty tree 
+    * @param p - this node's parent  */
+  public Leaf(Node p)
+  { my_parent = p; }
+ ...
+}
+</pre>
+and a node looks like this:
+<pre>
+/** Node models a nonempty tree node, holding a value, two subtrees, and
+  *  a link to this Node's parent Node  */
+public class Node extends MutableTree
+{ private Object val;
+  private MutableTree left;
+  private MutableTree right;
+  private Node my_parent;
+
+  /** Constructor Node constructs the tree node
+    * @param p - this node's parent node
+    * @param v - the value held in the node
+    * @param l - the left subtree
+    * @param r - the right subtree  */
+  public Node(Node p, Object v, MutableTree l, MutableTree r)
+  { my_parent = p;
+    val = v;
+    left = l;
+    right = r;
+  }
+  ...
+}
+</pre>
+
+<p>
+Here are some basic actions on mutable trees.
+First, lets build a Node that holds "b" and two leaves:
+<pre>
+Leaf empty1 = new Leaf(null);
+Leaf empty2 = new Leaf(null);
+Node btree = new Node(null, "b", empty1, empty2);
+empty1.setParent(btree);   // connect leaves to parent node
+empty2.setParent(btree)
+</pre>
+Notice that the parent links in the leaves must be set.
+
+<p>
+The above steps are tedious and are best placed in a helper method:
+<pre>
+/** makeNewNode builds a Node that holds  value  and links to  parent */
+public Node makeNewNode(Node parent, Object value)
+{ Leaf empty1 = new Leaf(null);
+  Leaf empty2 = new Leaf(null);
+  Node new_node = new Node(parent, value, empty1, empty2);
+  empty1.setParent(new_node);   // connect leaves to parent node
+  empty2.setParent(new_node);
+  return new_node;
+}
+</pre>
+Next, let's make another Node, holding <tt>"c"</tt>, and
+then connect the two nodes to yet another that holds <tt>"a"</tt>:
+<pre>
+Node ctree = makeNewNode(null, "c");  // build a tree that holds just "c"
+Node atree = new Node(null, "a", btree, ctree);
+btree.setParent(atree);
+ctree.setParent(atree);
+</pre>
+
+<p>
+Although setting the parent links is a bother, the links pay handsomely
+when we must delete a node from the tree.  Say that
+we must delete <tt>btree</tt>, replacing it
+by a leaf.  We can do this
+without traversing the tree to find <tt>btree</tt>'s position:
+<pre>
+Node bparent = btree.parent();
+if ( bparent != null )  // verify that  btree  is not the root
+   { Leaf replacement = new Leaf(bparent); 
+     if ( bparent.left() == btree )  // is btree its parent's left subtree?
+          { bparent.setLeft(replacement); }
+     else // it's the right subtree of its parent:
+          { bparent.setRight(replacement); }
+   }
+</pre>
+
+<p>
+<hr>
+<p>
+
+You can find the coding of the classes for mutable trees at
+<a href="MutableTreeEx/MutableTree.html"><h4>package MutableTree</h4></a>
+
+<p>
+<hr>
+<p>
+
+
+<h4>Methods for mutable trees</h4>
+
+
+Let's start with a standard example---inserting a value, <tt>u</tt>, into an
+ordered tree.  Say there is a variable,
+named <tt>the_ordered_tree</tt>,
+that holds (the address of)
+the tree to be altered.
+Here is a simple strategy, based on the technique we used with immutable
+trees:
+<pre>
+private MutableTree the_ordered_tree;
+  ...
+the_ordered_tree = insert(u, the_ordered_tree);
+</pre>
+where the <tt>insert</tt> method is defined as follows:
+<pre>
+/** insert  places  u  into its proper position in tree  t,
+  *  and returns the address of the altered tree.  (This is usually just
+  *  t  itself, unless  t  is a Leaf, in which case it must be replaced
+  *  by a new Node.)  */
+public MutableTree insert(Record u, MutableTree t)
+{ MutableTree answer;
+  if ( t instanceof Leaf )
+     { answer = makeNewNode(null, u); } // see  makeNewNode  above
+  else // t  is a Node:
+     { Record v = t.value();
+       if ( u.getKey() < v.getKey() ) // remember to properly recode  <
+            { MutableTree new_left = insert(u, t.left());
+              // attach the revised left subtree to  t:
+              new_left.setParent(t);
+              t.setLeft(new_left);
+            }
+       else // u.getKey() >= v.getKey() :
+            { MutableTree new_right = insert(u, t.right());
+              new_right.setParent(t);
+              t.setRight(new_right);
+            }
+       answer = t;  
+     }
+  return answer;
+}
+</pre>
+ 
+<!--
+Or, we might rewrite the above to use a loop to search for the
+Leaf that must be replaced in the tree:
+<pre>
+public void insert(Object u, MutableTree t)
+{ MutableTree current = t;
+  boolean found_leaf = false;
+  boolean we_branched_to_the_left = false;  // remembers previous branch step
+  Node new_node = makeNewNode(null, u);  // the Node we will attach
+  while ( !found_leaf )
+        { if ( current instanceof Leaf)
+               { if (  ?????//
+if ( u < current.value() )  // insert to the left?
+             { if ( current.left() instanceof Leaf )  // insert here?
+                    { found_leaf = true; }
+               else { current = current.left(); }
+             }
+          else // u >= current.value(), so insert to the right:
+             { if ( current.right() instanceof Leaf ) // insert here?
+                    { found_leaf = true; }
+               else { current = current.right(); }
+             }
+        }
+  // we know that we must insert immediately underneath the  current  node:
+  if ( u < current.value() )
+     { current.setLeft( new Node(u, new Leaf(), new Leaf()) ); }
+  else
+     { current.setRight( new Node(u, new Leaf(), new Leaf()) ); }
+}
+-->
+
+<!--
+<p>
+Another strategy is to write <tt>insert</tt> so that it does not
+return the address of the altered tree.  Instread, the
+<tt>insert</tt> method operates on <tt>the_ordered_tree</tt>
+as a ``global variable'':
+<pre>
+private MutableTree the_ordered_tree;
+  ...
+insert(u);  // this alters  the_ordered_tree  directly
+</pre>
+
+<pre>
+/** insert  places  u  into its proper position in the_ordered_tree 
+  * @param u - the value to be inserted into the_ordered_tree  */
+public void insert(u)
+{ if ( the_ordered_tree  is an instanceof  Leaf )
+       { the_ordered_tree = makeNewNode(null, r); } // see  makeNewNode  above
+  else // the_ordered_tree  is a Node, so we must descend into
+       //  the_ordered_tree  to find the position where we will attach u:
+       { attachValue(u, the_ordered_tree); }  // see below
+}
+</pre>
+Next, we write a helper method,
+<tt>attachValue</tt>, that looks inside <tt>the_ordered_tree</tt>
+and finds the correct position for <tt>u</tt>.
+When the position is located, then a new node is constructed and
+attached to the position:
+<pre>
+/** attachValue  is a helper method that places  u  in its correct position
+  *   within a non-Leaf subtree,  t  */
+private void attachValue(Record u, MutableTree t)
+{ // t  is known to be a  Node, so go straight to work on it;
+  if ( u < t.value() )
+       // if true, then  u  is inserted into t's left subtree:
+       { if ( t.left() instanceof Leaf )  // but, is the left subtree a leaf?
+              // if true, then we make a new node with u in it and alter
+              //  t  to link to this new node:
+              { Node new_node = makeNewNode(t, u);
+                t.setLeft(new_node);
+              }
+         else // t.left() isn't a leaf, so we must descend deeper to the left:
+              { attachValue(u, t.left()); }
+       }
+
+  else //  u >= t.value(), so insert into  t's  right subtree:
+       { if ( t.right() instanceof Leaf )
+             { Node new_node = makeNewNode(t, u);
+               t.setRight(new_node);
+             } 
+         else { attachValue(u, t.right()); }
+       }
+}
+</pre>
+-->
+The method asks the usual questions to decide whether to attach into the
+left subtree or the right one.  When a Leaf is finally found at the
+correct position for attachment, the Leaf is replaced by a new Node
+that holds <tt>u</tt>.
+Notice that
+<em>
+we construct only one new node</em>---the node that holds <tt>u</tt>---and
+<em>we reset only one link</em>,
+the link to <tt>u</tt>'s parent.  We do not
+reassemble the tree as we did when we worked with immutable trees;
+the updating of <tt>the_ordered_tree</tt> is done ``in place.''
+
+<p>
+With a bit of effort, you can rewrite <tt>insert</tt> so that it uses
+a loop to traverse the path from the root to the Leaf that must
+be replaced by the new Node and its value, <tt>u</tt>.
+(Review this technique from the previous lecture.)
+
+
+<p>
+<hr>
+<p>
+A package, <tt>MutableOrderedTree</tt>, has been written for constructing
+mutable
+ordered trees.  The package contains methods for insertion,
+finding, and deletion.
+You can find it here:
+<h3>
+<a href="MutableTreeEx/MutableOrderedTree.html"><tt>package MutableOrderedTree</tt></a>
+</h3>
+
+<p>
+<hr>
+<p>
+
+<h4>Deletion of a node from a mutable tree</h4>
+Deletion of nodes from an immutable tree is painful and should be
+avoided if possible.  If you must do deletions, then try to work with
+a mutable, ordered tree.  To do a deletion, tackle the problem in two steps:
+<ol>
+<li>
+Find the node that holds the value to be deleted.  The node you locate
+is at the root of some subtree, <tt>t</tt>, embedded within the overall tree.
+<li>
+Given tree <tt>t</tt>, remove its root node and return the address
+of the tree you reassemble with <tt>t</tt>'s left and right subtrees.
+Attach this address to <tt>t</tt>'s parent.
+</ol>
+We already know how to find values in a tree, so we take Step (1)
+as solved.
+What remains is writing an algorithm for
+deleting the root of a (sub)tree that is mutable and ordered,
+building an ordered tree from what's left, and returning the address
+of the rebuilt tree.  (The address is then linked to the parent.)
+
+<h4>Naive deletion algorithm</h4>
+<P>
+Say that tree <tt>t</tt> has the root node, <tt>N</tt>, a left subtree,
+<tt>L</tt>, and a right subtree, <tt>R</tt>.  
+There are two techniques for deleting <tt>N</tt>:
+the first is simple
+but has a bad practical behavior:
+
+<dl>
+<dd>
+Use <tt>L</tt> as if it is the new tree.  Because all the values in
+<tt>L</tt> have keys that are less than all those in <tt>R</tt>,
+we merely attach <tt>R</tt> where the rightmost Leaf rests in
+<tt>L</tt>. 
+</dl>
+Here is a picture:
+<pre>
+          N                         L
+        /   \                      / \
+       L     R        ==>          ---R
+      / \   / \                      / \
+      ---.  ---                      ---
+</pre>
+The dot in the first drawing represents the rightmost leaf; this
+leaf is replaced by tree <tt>R</tt> by resetting a link.
+The resulting tree is ordered.
+
+<p>
+This alteration is easy to do, but it makes the ordered
+tree highly unbalanced very quickly---searches into the
+<tt>R</tt>-part are dramatically slowed.
+
+<h4>Improved deletion algorithm</h4>
+<p>
+The second approach is more complex but actually helps to rebalance
+the ordered tree.  We move an innermost node to the root.
+Here is a picture first, which shows how innermost node, <tt>W</tt>,
+becomes the new root:
+<pre>
+          N                          W
+        /   \                      /   \
+       L     R        ==>         L     R
+      / \   / \                  / \   / \
+      ---Z  ---                  ---Z  ---
+        / \                        / \
+       Y   W                      Y   X
+      /\  / \                    /\  /\
+         X   .
+        /\
+</pre>
+The dot is a leaf; the letters denote nodes.
+<tt>W</tt> is the rightmost node in subtree <tt>L</tt>;
+since <tt>W</tt> is rightmost, its right subtree
+<em>must be a leaf</em>.  We make <tt>W</tt> the new root and leave behind
+<tt>W</tt>'s left subtree, <tt>X</tt>, attaching it to <tt>W</tt>'s former parent,
+<tt>Z</tt>.  This makes the new tree ordered.
+
+<p>
+In the above situation, we could also choose
+to move the <em>leftmost</em> node in subtree <tt>R</tt> to be the root;
+this works equally well.
+
+<p>
+Here is an algorithm for making the innermost rightmost node of <tt>L</tt>
+into the root:
+<dl>
+<dd>
+<ol>
+<li>
+Within <tt>L</tt>, locate its <em>rightmost</em>
+node; say that it is <tt>W</tt>.
+Say that <tt>W</tt>'s parent node is <tt>Z</tt>.
+Make <tt>W</tt> the root of the new tree, by:
+<li>
+<tt>Z.setRight(W.left())</tt>, that is, parent <tt>Z</tt> links to
+the subtree that <tt>W</tt> holds.  (This frees <tt>W</tt> to move to the
+root; recall that <tt>W</tt> is the rightmost node in <tt>L</tt>, meaning
+that <tt>W</tt>'s right subtree must be a Leaf.)
+<li>
+<tt>W.setLeft(L)</tt>
+<li>
+<tt>W.setRight(R)</tt>
+<li>
+Reset all parent links accordingly.
+</ol>
+</dl>
+
+This technique naturally balances the tree over a period of deletions,
+when the technique is alternated with its dual, which moves the leftmost
+node from <tt>R</tt> to be the new root:
+<dl>
+<dd>
+<ol>
+<li>
+Within <tt>R</tt>, locate its <em>leftmost</em> node; say that it is <tt>W</tt>.
+Say that <tt>W</tt>'s parent node is <tt>Z</tt>.
+Now, make <tt>W</tt> the root of the new tree, by:
+<li>
+<tt>Z.setLeft(W.right())</tt>, that is, parent <tt>Z</tt> links to
+the subtree that <tt>W</tt> holds.  (This frees <tt>W</tt> to move to the
+root; recall that <tt>W</tt> is the leftmost node in <tt>R</tt>, meaning
+that <tt>W</tt>'s left subtree must be a Leaf.)
+<li>
+<tt>W.setRight(R)</tt>
+<li>
+<tt>W.setLeft(L)</tt>
+<li>
+Reset all parent links.
+</ol>
+</dl>
+Again, by alternating the two deletion algorithms we rebalance the tree
+over a series of deletions.
+
+<p>
+You can see the implementation of this form of deletion in
+<tt>class OrderedTree</tt> in
+<a href="MutableTreeEx/MutableOrderedTree.html">
+<tt>package MutableOrderedTree</tt></a>.
+
+
+<p>
+Finally, there are more sophisticated methods for inserting and deleting
+values in ordered trees.  So-called <em>AVL trees</em> rearrange
+their subtrees after every insertion and after every deletion to ensure that
+the tree is always almost balanced.   We will study AVL
+trees later in the course.
+
+<!--
+<p>
+<hr>
+<p>
+
+All the code files for mutable and mutable ordered trees can be found in 
+
+<h4>
+<a href="MutableTreeEx">the <tt>MutableTreeEx</tt> folder</a>
+</h4>
+-->
+
+</body>
